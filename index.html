@@ -5,19 +5,93 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="KrishiMitra - Voice + Camera Farm App with ESP32 Sensors">
 
+  <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="KrishiMitra">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>KrishiMitra</title>
+  <title>KrishiMitra - Smart Agriculture Companion</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #E8F5E8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #pwa-install-banner {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1B5E20;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      z-index: 99999;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid #81C784;
+    }
+    #pwa-install-banner:hover {
+      background: #2E7D32;
+    }
+  </style>
 </head>
 <body>
+  <div id="pwa-install-banner">
+    <span>📲</span> Install KrishiMitra App (ऐप इंस्टॉल करें)
+  </div>
+
+  <script>
+    let deferredPrompt;
+    const installBanner = document.getElementById('pwa-install-banner');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBanner) {
+        installBanner.style.display = 'flex';
+      }
+      // Auto show install prompt on Android after 2 seconds
+      setTimeout(() => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+        }
+      }, 2000);
+    });
+
+    if (installBanner) {
+      installBanner.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          installBanner.style.display = 'none';
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      if (installBanner) {
+        installBanner.style.display = 'none';
+      }
+      console.log('KrishiMitra PWA installed successfully');
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

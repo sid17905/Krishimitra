@@ -1,11 +1,11 @@
 {
-    "name": "KrishiMitra",
+    "name": "KrishiMitra - Smart Farm Companion",
     "short_name": "KrishiMitra",
-    "start_url": ".",
+    "start_url": "./",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Voice + Camera Farm App with ESP32 Sensors for Team Nova Core",
+    "background_color": "#E8F5E8",
+    "theme_color": "#2E7D32",
+    "description": "Voice + Camera Farm App with ESP32 Sensors for Smart India Hackathon",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
