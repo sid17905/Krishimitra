@@ -1,0 +1,21 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - macos/**
+    - linux/**
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/flutter_windows_3.47.2-stable/**"
+    - "**/build/**"
+    - "**/examples/**"
+    - "**/test/**"
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true

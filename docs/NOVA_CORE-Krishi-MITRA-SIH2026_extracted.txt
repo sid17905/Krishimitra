@@ -1,0 +1,206 @@
+=== NOVA_CORE-Krishi-MITRA-SIH2026.pdf ===
+Total pages: 6
+
+
+--- Page 1 ---
+SMART INDIA HACKATHON 2026
+Problem Statement ID – [ADD YOUR PS ID]
+Problem Statement Title-
+Small farmers guess at sowing, spraying, and selling decisions — no affordable, real-
+time, local-language advisor exists.
+Literacy barriers and delayed expert access force farmers into costly guesswork. What can them help is 
+a voice-enabled, sensor-driven AI companion for instant, localized guidance on crop health, weather, 
+and markets 
+Theme- Agriculture, FoodTech & Rural Development
+PS Category- Software/Hardware
+Team ID- [ADD TEAM ID]
+Team Name (Registered on portal) – NOVA_CORE
+
+--- Page 2 ---
+KRISHI MITRA
+2
+@SIH Idea submission
+NOVA_
+CORE
+Proposed Solution
+01
+Voice + Camera
+Farm App
+02
+ESP32 Field
+Hardware Sensors
+03
+Market Price
+Trend Analysis
+04
+Seasonal Weather
+Intelligence
+05
+Contamination &
+Nowcast Alerts
+Innovation & Uniqueness
+• Season-long farm companion — plans, grows, protects, and sells with the farmer, not just a single-query chatbot.
+• First fusion of on-field sensors with government pollution data to flag environmental risk, not just crop health.
+• Voice + camera remove the literacy barrier; live sensors and government data replace guesswork and delayed 
+experts.
+• Turns generic daily weather into minutes-matter, location-specific action alerts for storms and contamination.
+
+--- Page 3 ---
+TECHNICAL APPROACH
+3
+@SIH Idea submission
+NOVA_
+CORE
+Technologies Used
+Voice + Camera App with ML 
+Engine
+ESP32: Soil Moisture, NPK, 
+DHT22
+Govt. Weather & Soil-Type APIs
+IMD Nowcast/Radar + Wind-
+Vector
+CPCB / NWMP Water Quality 
+Data
+ISRO Bhuvan / Sentinel Land-
+Use
+Agmarknet / e-NAM Price APIs
+New Sensors: pH, EC/TDS, 
+Turbidity, MQ-Gas
+Methodology — Sensing to Alert Pipeline
+Farmer Signs Up
+Voice/Camera App + 
+ESP32 Sensors
+Govt. Weather, Soil
+& Agmarknet Price Data
+Knowledge +
+Logic Base
+Growth, Yield &
+Price Prediction
+Sensor Baseline
+(pH, EC/TDS, Turbidity)
+Anomaly Detected
+(EC/pH Spike)
+Cross-Match: Satellite
+Land-Use + CPCB/NWMP
+Likely-Source
+Contamination Alert
+IMD Radar +
+Wind-Vector Feed
+Wind-Adjusted
+Time-to-Arrival Calc.
+0–3 hr Storm
+Risk Identified
+Proactive
+Nowcast Alert
+Voice + 
+Notification
+Alerts to 
+Farmer
+
+--- Page 4 ---
+FEASIBILITY AND VIABILITY
+4
+@SIH Idea submission
+NOVA_
+CORE
+Challenges & Risks
+• Inconsistent field-sensor accuracy; 
+cheap sensors flag anomalies but can’t 
+confirm exact pollutants
+• Patchy rural internet connectivity
+• Gaps in govt. weather/soil data 
+coverage across regions
+• Nowcast/radar accuracy and pollution-
+data timeliness vary by region
+Feasibility
+• All sensors (ESP32, NPK, moisture, 
+DHT22, pH, EC/TDS, turbidity, MQ-
+gas) are low-cost, well-documented, 
+and ESP32-compatible
+• Govt. weather, soil, IMD nowcast & 
+CPCB/NWMP data are public and 
+already used on other platforms — no 
+new infra needed
+• Agmarknet / e-NAM mandi price data 
+is public and updated regularly
+• Realistically buildable within the 
+hackathon timeline
+Mitigation Strategy
+• Calibrate sensors against manual 
+soil/water tests
+• Cache recent weather, soil & price data 
+on-device; fall back to regional 
+historical averages when live feeds are 
+delayed
+• Frame contamination alerts as “flag for 
+farmer verification,” not a confirmed 
+diagnosis
+• Use wind-adjusted time-to-arrival 
+estimates with a stated margin of error, 
+not exact-minute promises
+
+--- Page 5 ---
+IMPACT AND BENEFITS
+5
+@SIH Idea submission
+NOVA_
+CORE
+Farmers (Users)
+●
+Direct, real-time access to expert-level guidance on 
+pesticides, fertilizers, crop cycles and growth periods.
+●
+Reduces dependence on guesswork and inconsistent local 
+advice.
+Economic Impact
+●
+Higher yields and better-timed harvest/price decisions 
+raise farmer income.
+Environmental & Social Impact
+●
+Data-driven fertilizer and pesticide use protects soil 
+quality.
+●
+Voice- and camera-based interaction makes the assistant 
+accessible even to farmers with low literacy.
+
+--- Page 6 ---
+RESEARCH  AND REFERENCES
+6
+@SIH Idea submission
+NOVA_
+CORE
+Research & Precedent:
+●
+IoT-enabled soil moisture prediction: M. Afzal et al., “IoT-enabled adaptive watering system with ARIMA-based soil moisture prediction,” IEEE Access, vol. 13, 
+2025.
+●
+ML-based rice yield prediction in India: D. De Clercq and A. Mahdi, “Feasibility of ML-based rice yield prediction in India at district level,” arXiv:2403.07967, 
+2024.
+●
+IoT soil sensing automation: A. A. Abdelmoneim et al., “Internet of Things (IoT) for Soil Moisture Tensiometer Automation,” Micromachines, 14(2), 2023.
+●
+Voice-based AI farm advisory at scale: N. Singh et al. (Digital Green & Microsoft Research), “Farmer.Chat: Scaling AI-Powered Agricultural Services,” 
+arXiv:2409.08916, 2024.
+●
+AI advisory deployment learnings (incl. Bihar, India): S. Collis et al. (Gates Foundation / GIZ / CLEAR Global), “Building AI-based advisory services for 
+smallholder farmers,” arXiv:2601.11537, 2026.
+Web References (for citation):
+●
+data.gov.in – agricultural, weather & soil datasets.
+●
+mausam.imd.gov.in – real-time weather API.
+●
+icar.org.in – soil-type & crop-suitability data.
+●
+espressif.com – ESP32/NPK/DHT22 hardware refs.
+Real-World Case Studies:
+●
+Farmer.Chat (Digital Green) – voice/text/image AI advisory chatbot for smallholder farmers; 
+India, Kenya, Ethiopia & Nigeria.
+●
+Bharat-VISTAAR (Govt. of India) – official voice-first AI farming platform; AgriStack + ICAR 
++ weather data, launched 2026.
+●
+KissanAI – voice-based AI copilot for farmers in their native language; 100,000+ users within 
+months.

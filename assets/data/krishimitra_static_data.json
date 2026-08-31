@@ -1,0 +1,708 @@
+{
+  "app_info": {
+    "name": "KrishiMitra",
+    "version": "1.0.0",
+    "description": "Voice-Enabled AI Smart Agriculture Companion (SIH Prototype)",
+    "status": "Prototype / Static Evaluation Demo"
+  },
+  "disclaimers": {
+    "voice_assistant": "⚠️ Prototype Mode: AI Voice Assistant is not deployed to a live backend. This is an interactive static representation and UI simulation for demonstration purposes."
+  },
+  "supported_languages": {
+    "en": "English",
+    "hi": "हिंदी",
+    "mr": "मराठी",
+    "bn": "বাংলা",
+    "te": "తెలుగు",
+    "ta": "தமிழ்",
+    "gu": "ગુજરાતી",
+    "kn": "ಕನ್ನಡ",
+    "ml": "മലയാളം",
+    "pa": "ਪੰਜਾਬੀ"
+  },
+  "translations": {
+    "en": {
+      "app_name": "KrishiMitra",
+      "greeting": "Namaste! 🌱",
+      "greeting_sub": "How is your farm today?",
+      "temp_label": "Temperature",
+      "moisture_label": "Moisture",
+      "crop_label": "Crop",
+      "voice_module": "Voice + Camera",
+      "sensor_module": "Field Sensors",
+      "market_module": "Market Prices",
+      "weather_module": "Weather",
+      "alerts_module": "Alerts",
+      "recent_alerts": "Recent Alerts",
+      "rain_warning_title": "Rain Warning",
+      "rain_warning_desc": "Rain expected in next 3 hours",
+      "wheat_sell_title": "Wheat Sell Time",
+      "wheat_sell_desc": "Current prices are high",
+      "mandi_prices_title": "Market Prices",
+      "selling_tip_title": "Selling Tip",
+      "selling_tip_desc": "Best time to sell in 2 weeks based on e-NAM trend",
+      "price_trend_title": "Price Trend",
+      "forecast_title": "Price Forecast",
+      "nearby_mandi_title": "Nearby Mandi Prices",
+      "voice_title": "Voice Assistant",
+      "listening": "Listening...",
+      "ask_anything": "Ask me anything about your farm",
+      "quick_questions": "Quick Questions:",
+      "wheat": "Wheat",
+      "rice": "Rice",
+      "maize": "Maize",
+      "soybean": "Soybean",
+      "cotton": "Cotton",
+      "mustard": "Mustard",
+      "potato": "Potato"
+    },
+    "hi": {
+      "app_name": "कृषि मित्र",
+      "greeting": "नमस्ते! 🌱",
+      "greeting_sub": "आज आपका खेत कैसा है?",
+      "temp_label": "तापमान",
+      "moisture_label": "नमी",
+      "crop_label": "फसल",
+      "voice_module": "आवाज़ + कैमरा",
+      "sensor_module": "सेंसर डैशबोर्ड",
+      "market_module": "बाज़ार मूल्य",
+      "weather_module": "मौसम",
+      "alerts_module": "अलर्ट",
+      "recent_alerts": "नवीनतम अलर्ट",
+      "rain_warning_title": "बारिश की चेतावनी",
+      "rain_warning_desc": "अगले 3 घंटे में बारिश की संभावना",
+      "wheat_sell_title": "गेहूं बेचने का समय",
+      "wheat_sell_desc": "कीमत अभी ऊँची है",
+      "mandi_prices_title": "मंडी भाव",
+      "selling_tip_title": "बेचने का सुझाव",
+      "selling_tip_desc": "ई-नाम रुझान के अनुसार 2 सप्ताह में बेचना सबसे अच्छा",
+      "price_trend_title": "मूल्य रुझान",
+      "forecast_title": "मूल्य पूर्वानुमान",
+      "nearby_mandi_title": "आस-पास के मंडी भाव",
+      "voice_title": "आवाज़ सहायक",
+      "listening": "सुन रहा हूँ...",
+      "ask_anything": "अपने खेत के बारे में कुछ भी पूछें",
+      "quick_questions": "त्वरित प्रश्न:",
+      "wheat": "गेहूं",
+      "rice": "चावल (धान)",
+      "maize": "मक्का",
+      "soybean": "सोयाबीन",
+      "cotton": "कपास",
+      "mustard": "सरसों",
+      "potato": "आलू"
+    },
+    "mr": {
+      "app_name": "कृषी मित्र",
+      "greeting": "नमस्कार! 🌱",
+      "greeting_sub": "आज तुमचे शेत कसे आहे?",
+      "temp_label": "तापमान",
+      "moisture_label": "ओलावा",
+      "crop_label": "पीक",
+      "voice_module": "आवाज + कॅमेरा",
+      "sensor_module": "सेंसर डॅशबोर्ड",
+      "market_module": "बाजार भाव",
+      "weather_module": "हवामान",
+      "alerts_module": "सूचना",
+      "recent_alerts": "नवीनतम सूचना",
+      "rain_warning_title": "पावसाचा इशारा",
+      "rain_warning_desc": "पुढील ३ तासांत पावसाची शक्यता",
+      "wheat_sell_title": "गहू विक्रीची वेळ",
+      "wheat_sell_desc": "सध्याचे भाव चढे आहेत",
+      "mandi_prices_title": "बाजार भाव",
+      "selling_tip_title": "विक्री सल्ला",
+      "selling_tip_desc": "२ आठवड्यांत विक्री करणे फायदेशीर",
+      "price_trend_title": "भाव कल",
+      "forecast_title": "भाव अंदाज",
+      "nearby_mandi_title": "जवळपासचे बाजार भाव",
+      "voice_title": "आवाज सहाय्यक",
+      "listening": "ऐकत आहे...",
+      "ask_anything": "शेतीबद्दल काहीही विचारा",
+      "quick_questions": "त्वरित प्रश्न:",
+      "wheat": "गहू",
+      "rice": "भात",
+      "maize": "मका",
+      "soybean": "सोयाबीन",
+      "cotton": "कापूस",
+      "mustard": "मोहरी",
+      "potato": "बटाटा"
+    },
+    "bn": {
+      "app_name": "কৃষি মিত্র",
+      "greeting": "নমস্কার! 🌱",
+      "greeting_sub": "আজ আপনার খামার কেমন আছে?",
+      "temp_label": "তাপমাত্রা",
+      "moisture_label": "আর্দ্রতা",
+      "crop_label": "ফসল",
+      "voice_module": "ভয়েস + ক্যামেরা",
+      "sensor_module": "সেন্সর ড্যাশবোর্ড",
+      "market_module": "বাজার দর",
+      "weather_module": "আবহাওয়া",
+      "alerts_module": "সতর্কতা",
+      "recent_alerts": "সাম্প্রতিক সতর্কতা",
+      "rain_warning_title": "বৃষ্টির সতর্কতা",
+      "rain_warning_desc": "পরবর্তী ৩ ঘণ্টার মধ্যে বৃষ্টির সম্ভাবনা",
+      "wheat_sell_title": "গম বিক্রির সময়",
+      "wheat_sell_desc": "বর্তমান দাম বেশ ভালো",
+      "mandi_prices_title": "বাজারের দাম",
+      "selling_tip_title": "বিক্রয় পরামর্শ",
+      "selling_tip_desc": "২ সপ্তাহের মধ্যে বিক্রি করা লাভজনক",
+      "price_trend_title": "দামের গতিপ্রকৃতি",
+      "forecast_title": "দামের পূর্বাভাস",
+      "nearby_mandi_title": "কাছের বাজারের দর",
+      "voice_title": "ভয়েস সহকারী",
+      "listening": "শুনছি...",
+      "ask_anything": "খামার সম্পর্কে যেকোনো প্রশ্ন করুন",
+      "quick_questions": "দ্রুত প্রশ্ন:",
+      "wheat": "গম",
+      "rice": "ধান / চাল",
+      "maize": "ভুট্টা",
+      "soybean": "সয়াবিন",
+      "cotton": "তুলা",
+      "mustard": "সরিষা",
+      "potato": "আলু"
+    },
+    "te": {
+      "app_name": "కృషి మిత్ర",
+      "greeting": "నమస్కారం! 🌱",
+      "greeting_sub": "ఈరోజు మీ పొలం ఎలా ఉంది?",
+      "temp_label": "ఉష్ణోగ్రత",
+      "moisture_label": "తేమ",
+      "crop_label": "పంట",
+      "voice_module": "వాయిస్ + కెమెరా",
+      "sensor_module": "సెన్సార్ డాష్బోర్డ్",
+      "market_module": "మార్కెట్ ధరలు",
+      "weather_module": "వాతావరణం",
+      "alerts_module": "హెచ్చరికలు",
+      "recent_alerts": "ఇటీవలి హెచ్చరికలు",
+      "rain_warning_title": "వర్ష సూచన",
+      "rain_warning_desc": "రాబోయే 3 గంటల్లో వర్షం కురిసే అవకాశం",
+      "wheat_sell_title": "గోధుమ అమ్మకపు సమయం",
+      "wheat_sell_desc": "ప్రస్తుత ధరలు ఎక్కువగా ఉన్నాయి",
+      "mandi_prices_title": "మార్కెట్ ధరలు",
+      "selling_tip_title": "అమ్మకపు సలహా",
+      "selling_tip_desc": "2 వారాల్లో అమ్మడం అత్యంత లాభదాయకం",
+      "price_trend_title": "ధరల సరళి",
+      "forecast_title": "ధరల అంచనా",
+      "nearby_mandi_title": "సమీప మార్కెట్ ధరలు",
+      "voice_title": "వాయిస్ అసిస్టెంట్",
+      "listening": "వింటున్నాను...",
+      "ask_anything": "మీ వ్యవసాయం గురించి ఏమైనా అడగండి",
+      "quick_questions": "త్వరిత ప్రశ్నలు:",
+      "wheat": "గోధుమలు",
+      "rice": "వరి / బియ్యం",
+      "maize": "మొక్కజొన్న",
+      "soybean": "సోయాబీన్",
+      "cotton": "పత్తి",
+      "mustard": "ఆవాలు",
+      "potato": "బంగాళాదుంప"
+    },
+    "ta": {
+      "app_name": "கிஷி மித்ரா",
+      "greeting": "வணக்கம்! 🌱",
+      "greeting_sub": "இன்று உங்கள் பண்ணை எப்படி உள்ளது?",
+      "temp_label": "வெப்பநிலை",
+      "moisture_label": "ஈரப்பதம்",
+      "crop_label": "பயிர்",
+      "voice_module": "குரல் + கேமரா",
+      "sensor_module": "சென்சார் பலகை",
+      "market_module": "சந்தை விலை",
+      "weather_module": "வானிலை",
+      "alerts_module": "எச்சரிக்கைகள்",
+      "recent_alerts": "சமீபத்திய எச்சரிக்கைகள்",
+      "rain_warning_title": "மழை எச்சரிக்கை",
+      "rain_warning_desc": "அடுத்த 3 மணி நேரத்தில் மழை எதிர்பார்க்கப்படுகிறது",
+      "wheat_sell_title": "கோதுமை விற்பனை நேரம்",
+      "wheat_sell_desc": "தற்போதைய விலை அதிகமாக உள்ளது",
+      "mandi_prices_title": "சந்தை விலைகள்",
+      "selling_tip_title": "விற்பனை குறிப்பு",
+      "selling_tip_desc": "2 வாரங்களில் விற்பது சிறந்தது",
+      "price_trend_title": "விலை போக்கு",
+      "forecast_title": "விலை கணிப்பு",
+      "nearby_mandi_title": "அருகிலுள்ள சந்தை விலைகள்",
+      "voice_title": "குரல் உதவியாளர்",
+      "listening": "கேட்கிறது...",
+      "ask_anything": "விவசாயம் பற்றி எதுவும் கேளுங்கள்",
+      "quick_questions": "விரைவு கேள்விகள்:",
+      "wheat": "கோதுமை",
+      "rice": "நெல் / அரிசி",
+      "maize": "சோளம்",
+      "soybean": "சோயாபீன்",
+      "cotton": "பருத்தி",
+      "mustard": "கடுகு",
+      "potato": "உருளைக்கிழங்கு"
+    },
+    "gu": {
+      "app_name": "કૃષિ મિત્ર",
+      "greeting": "નમસ્તે! 🌱",
+      "greeting_sub": "આજે તમારું ખેતર કેવું છે?",
+      "temp_label": "તાપમાન",
+      "moisture_label": "ભેજ",
+      "crop_label": "પાક",
+      "voice_module": "અવાજ + કૅમેરા",
+      "sensor_module": "સેન્સર ડેશબોર્ડ",
+      "market_module": "બજાર ભાવ",
+      "weather_module": "હવામાન",
+      "alerts_module": "ચેતવણીઓ",
+      "recent_alerts": "તાજેતરની ચેતવણીઓ",
+      "rain_warning_title": "વરસાદની ચેતવણી",
+      "rain_warning_desc": "આગામી 3 કલાકમાં વરસાદની સંભાવના",
+      "wheat_sell_title": "ઘઉં વેચવાનો સમય",
+      "wheat_sell_desc": "હાલમાં ભાવો ઊંચા છે",
+      "mandi_prices_title": "મંડી ભાવો",
+      "selling_tip_title": "વેચાણ સલાહ",
+      "selling_tip_desc": "2 અઠવાડિયામાં વેચવું સૌથી શ્રેષ્ઠ",
+      "price_trend_title": "ભાવ વલણ",
+      "forecast_title": "ભાવ આગાહી",
+      "nearby_mandi_title": "નજીકના મંડી ભાવો",
+      "voice_title": "અવાજ સહાયક",
+      "listening": "સાંભળી રહ્યું છે...",
+      "ask_anything": "ખેતી વિશે કંઈપણ પૂછો",
+      "quick_questions": "ઝડપી પ્રશ્નો:",
+      "wheat": "ઘઉં",
+      "rice": "ડાંગર / ચોખા",
+      "maize": "મકાઈ",
+      "soybean": "સોયાબીન",
+      "cotton": "કપાસ",
+      "mustard": "રાઈ / સરસવ",
+      "potato": "બટાટા"
+    },
+    "kn": {
+      "app_name": "ಕೃಷಿ ಮಿತ್ರ",
+      "greeting": "ನಮಸ್ಕಾರ! 🌱",
+      "greeting_sub": "ಇಂದು ನಿಮ್ಮ ಜಮೀನು ಹೇಗಿದೆ?",
+      "temp_label": "ತಾಪಮಾನ",
+      "moisture_label": "ತೇವಾಂಶ",
+      "crop_label": "ಬೆಳೆ",
+      "voice_module": "ಧ್ವನಿ + ಕ್ಯಾಮೆರಾ",
+      "sensor_module": "ಸೆನ್ಸಾರ್ ಡ್ಯಾಶ್ಬೋರ್ಡ್",
+      "market_module": "ಮಾರುಕಟ್ಟೆ ಬೆಲೆ",
+      "weather_module": "ಹವಾಮಾನ",
+      "alerts_module": "ಎಚ್ಚರಿಕೆಗಳು",
+      "recent_alerts": "ಇತ್ತೀಚಿನ ಎಚ್ಚರಿಕೆಗಳು",
+      "rain_warning_title": "ಮಳೆ ಎಚ್ಚರಿಕೆ",
+      "rain_warning_desc": "ಮುಂದಿನ 3 ಗಂಟೆಗಳಲ್ಲಿ ಮಳೆಯಾಗುವ ಸಾಧ್ಯತೆ",
+      "wheat_sell_title": "ಗೋಧಿ ಮಾರಾಟ ಸಮಯ",
+      "wheat_sell_desc": "ಪ್ರಸ್ತುತ ಬೆಲೆಗಳು ಹೆಚ್ಚಿವೆ",
+      "mandi_prices_title": "ಮಾರುಕಟ್ಟೆ ದರಗಳು",
+      "selling_tip_title": "ಮಾರಾಟ ಸಲಹೆ",
+      "selling_tip_desc": "2 ವಾರಗಳಲ್ಲಿ ಮಾರಾಟ ಮಾಡುವುದು ಉತ್ತಮ",
+      "price_trend_title": "ಬೆಲೆ ಪ್ರವೃತ್ತಿ",
+      "forecast_title": "ಬೆಲೆ ಮುನ್ಸೂಚನೆ",
+      "nearby_mandi_title": "ಹತ್ತಿರದ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು",
+      "voice_title": "ಧ್ವನಿ ಸಹಾಯಕ",
+      "listening": "ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದೆ...",
+      "ask_anything": "ಕೃಷಿ ಬಗ್ಗೆ ಏನಾದರೂ ಕೇಳಿ",
+      "quick_questions": "ತ್ವರಿತ ಪ್ರಶ್ನೆಗಳು:",
+      "wheat": "ಗೋಧಿ",
+      "rice": "ಭತ್ತ / ಅಕ್ಕಿ",
+      "maize": "ಮೆಕ್ಕೆಜೋಳ",
+      "soybean": "ಸೋಯಾಬೀನ್",
+      "cotton": "ಹತ್ತಿ",
+      "mustard": "ಸಾಸಿವೆ",
+      "potato": "ಆಲೂಗಡ್ಡೆ"
+    },
+    "ml": {
+      "app_name": "കൃഷി മിത്ര",
+      "greeting": "നമസ്കാരം! 🌱",
+      "greeting_sub": "ഇന്ന് നിങ്ങളുടെ കൃഷിസ്ഥലം എങ്ങനെയുണ്ട്?",
+      "temp_label": "താപനില",
+      "moisture_label": "ഈർപ്പം",
+      "crop_label": "വിള",
+      "voice_module": "ശബ്ദം + ക്യാമറ",
+      "sensor_module": "സെൻസർ ഡാഷ്ബോർഡ്",
+      "market_module": "വിപണി വില",
+      "weather_module": "കാലാവസ്ഥ",
+      "alerts_module": "മുന്നറിയിപ്പുകൾ",
+      "recent_alerts": "പുതിയ മുന്നറിയിപ്പുകൾ",
+      "rain_warning_title": "മഴ മുന്നറിയിപ്പ്",
+      "rain_warning_desc": "അടുത്ത 3 മണിക്കൂറിനുള്ളിൽ മഴയ്ക്ക് സാധ്യത",
+      "wheat_sell_title": "ഗോതമ്പ് വിൽപന സമയം",
+      "wheat_sell_desc": "നിലവിലെ വില ഉയർന്നതാണ്",
+      "mandi_prices_title": "വിപണി നിരക്കുകൾ",
+      "selling_tip_title": "വിൽപ്പന നിർദ്ദേശം",
+      "selling_tip_desc": "2 ആഴ്ചയ്ക്കുള്ളിൽ വിൽക്കുന്നത് അനുയോജ്യം",
+      "price_trend_title": "വില പ്രവണത",
+      "forecast_title": "വില പ്രവചനം",
+      "nearby_mandi_title": "സമീപ വിപണി വിലകൾ",
+      "voice_title": "വോയ്സ് അസിസ്റ്റന്റ്",
+      "listening": "കേൾക്കുന്നു...",
+      "ask_anything": "കൃഷിയെക്കുറിച്ച് എന്തും ചോദിക്കൂ",
+      "quick_questions": "ദ്രുത ചോദ്യങ്ങൾ:",
+      "wheat": "ഗോതമ്പ്",
+      "rice": "നെല്ല് / അരി",
+      "maize": "ചോളം",
+      "soybean": "സോയാബീൻ",
+      "cotton": "പരുത്തി",
+      "mustard": "കടുക്",
+      "potato": "ഉരുളക്കിഴങ്ങ്"
+    },
+    "pa": {
+      "app_name": "ਕ੍ਰਿਸ਼ੀ ਮਿੱਤਰ",
+      "greeting": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! 🌱",
+      "greeting_sub": "ਅੱਜ ਤੁਹਾਡਾ ਖੇਤ ਕਿਵੇਂ ਹੈ?",
+      "temp_label": "ਤਾਪਮਾਨ",
+      "moisture_label": "ਨਮੀ",
+      "crop_label": "ਫ਼ਸਲ",
+      "voice_module": "ਆਵਾਜ਼ + ਕੈਮਰਾ",
+      "sensor_module": "ਸੈਂਸਰ ਡੈਸ਼ਬੋਰਡ",
+      "market_module": "ਮੰਡੀ ਭਾਅ",
+      "weather_module": "ਮੌਸਮ",
+      "alerts_module": "ਚੇਤਾਵਨੀਆਂ",
+      "recent_alerts": "ਤਾਜ਼ਾ ਚੇਤਾਵਨੀਆਂ",
+      "rain_warning_title": "ਮੀਂਹ ਦੀ ਚੇਤਾਵਨੀ",
+      "rain_warning_desc": "ਅਗਲੇ 3 ਘੰਟਿਆਂ ਵਿੱਚ ਮੀਂਹ ਦੀ ਸੰਭਾਵਨਾ",
+      "wheat_sell_title": "ਕਣਕ ਵੇਚਣ ਦਾ ਸਮਾਂ",
+      "wheat_sell_desc": "ਮੌਜੂਦਾ ਭਾਅ ਚੰਗੇ ਹਨ",
+      "mandi_prices_title": "ਮੰਡੀ ਦੇ ਭਾਅ",
+      "selling_tip_title": "ਵੇਚਣ ਦੀ ਸਲਾਹ",
+      "selling_tip_desc": "2 ਹਫ਼ਤਿਆਂ ਵਿੱਚ ਵੇਚਣਾ ਸਭ ਤੋਂ ਵਧੀਆ",
+      "price_trend_title": "ਕੀਮਤ ਦਾ ਰੁਝਾਨ",
+      "forecast_title": "ਭਾਅ ਭਵਿੱਖਬਾਣੀ",
+      "nearby_mandi_title": "ਨੇੜਲੀਆਂ ਮੰਡੀਆਂ ਦੇ ਭਾਅ",
+      "voice_title": "ਆਵਾਜ਼ ਸਹਾਇਕ",
+      "listening": "ਸੁਣ ਰਿਹਾ ਹੈ...",
+      "ask_anything": "ਖੇਤੀ ਬਾਰੇ ਕੁਝ ਵੀ ਪੁੱਛੋ",
+      "quick_questions": "ਤੁਰੰਤ ਸਵਾਲ:",
+      "wheat": "ਕਣਕ",
+      "rice": "ਝੋਨਾ / ਚੌਲ",
+      "maize": "ਮੱਕੀ",
+      "soybean": "ਸੋਇਆਬੀਨ",
+      "cotton": "ਕਪਾਹ",
+      "mustard": "ਸਰ੍ਹੋਂ",
+      "potato": "ਆਲੂ"
+    }
+  },
+  "market_data": {
+    "crops": [
+      {
+        "id": "Wheat",
+        "name": "Wheat",
+        "name_hi": "गेहूं",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 2340, "change": "+2.5%", "is_up": true },
+          "Azadpur Mandi": { "price": 2380, "change": "+1.5%", "is_up": true },
+          "Pune APMC": { "price": 2420, "change": "+0.9%", "is_up": true },
+          "Kanpur Mandi": { "price": 2290, "change": "+0.8%", "is_up": true },
+          "Pune Market": { "price": 2410, "change": "+1.1%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 2180 },
+            { "label": "Tue", "price": 2220 },
+            { "label": "Wed", "price": 2250 },
+            { "label": "Thu", "price": 2280 },
+            { "label": "Fri", "price": 2260 },
+            { "label": "Sat", "price": 2300 },
+            { "label": "Sun", "price": 2340 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 2100 },
+            { "label": "W2", "price": 2180 },
+            { "label": "W3", "price": 2250 },
+            { "label": "W4", "price": 2340 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 1950 },
+            { "label": "Jul", "price": 2000 },
+            { "label": "Aug", "price": 2180 },
+            { "label": "Sep", "price": 2340 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 2340, "change": "+2.5%", "is_up": true },
+          { "label": "Tomorrow", "price": 2380, "change": "+1.7%", "is_up": true },
+          { "label": "Week", "price": 2400, "change": "+0.8%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Azadpur Mandi", "price": "₹2,380", "change": "+1.5%", "distance": "14 km" },
+          { "name": "Kanpur Mandi", "price": "₹2,290", "change": "+0.8%", "distance": "42 km" },
+          { "name": "Agra Mandi", "price": "₹2,310", "change": "+1.2%", "distance": "65 km" }
+        ],
+        "selling_tip": "Demand rising due to festive procurement. Best to sell within 2 weeks."
+      },
+      {
+        "id": "Rice",
+        "name": "Rice",
+        "name_hi": "चावल (धान)",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 2220, "change": "+1.8%", "is_up": true },
+          "Azadpur Mandi": { "price": 2260, "change": "+2.1%", "is_up": true },
+          "Pune APMC": { "price": 2350, "change": "+0.5%", "is_up": true },
+          "Kanpur Mandi": { "price": 2190, "change": "+1.2%", "is_up": true },
+          "Pune Market": { "price": 2340, "change": "+0.4%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 2150 },
+            { "label": "Tue", "price": 2160 },
+            { "label": "Wed", "price": 2180 },
+            { "label": "Thu", "price": 2190 },
+            { "label": "Fri", "price": 2200 },
+            { "label": "Sat", "price": 2210 },
+            { "label": "Sun", "price": 2220 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 2080 },
+            { "label": "W2", "price": 2120 },
+            { "label": "W3", "price": 2180 },
+            { "label": "W4", "price": 2220 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 1980 },
+            { "label": "Jul", "price": 2040 },
+            { "label": "Aug", "price": 2120 },
+            { "label": "Sep", "price": 2220 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 2220, "change": "+1.8%", "is_up": true },
+          { "label": "Tomorrow", "price": 2250, "change": "+1.4%", "is_up": true },
+          { "label": "Week", "price": 2300, "change": "+2.2%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Varanasi Mandi", "price": "₹2,240", "change": "+1.4%", "distance": "18 km" },
+          { "name": "Patna APMC", "price": "₹2,210", "change": "+0.9%", "distance": "55 km" },
+          { "name": "Chandauli Mandi", "price": "₹2,260", "change": "+2.0%", "distance": "28 km" }
+        ],
+        "selling_tip": "Kharif harvest arrivals steady. Hold stock for mid-season price peak."
+      },
+      {
+        "id": "Maize",
+        "name": "Maize",
+        "name_hi": "मक्का",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 1920, "change": "-0.8%", "is_up": false },
+          "Azadpur Mandi": { "price": 1980, "change": "+0.5%", "is_up": true },
+          "Pune APMC": { "price": 2040, "change": "+1.2%", "is_up": true },
+          "Kanpur Mandi": { "price": 1890, "change": "-1.1%", "is_up": false },
+          "Pune Market": { "price": 2020, "change": "+0.8%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 1960 },
+            { "label": "Tue", "price": 1950 },
+            { "label": "Wed", "price": 1940 },
+            { "label": "Thu", "price": 1930 },
+            { "label": "Fri", "price": 1925 },
+            { "label": "Sat", "price": 1915 },
+            { "label": "Sun", "price": 1920 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 2010 },
+            { "label": "W2", "price": 1980 },
+            { "label": "W3", "price": 1950 },
+            { "label": "W4", "price": 1920 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 1820 },
+            { "label": "Jul", "price": 1890 },
+            { "label": "Aug", "price": 1960 },
+            { "label": "Sep", "price": 1920 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 1920, "change": "-0.8%", "is_up": false },
+          { "label": "Tomorrow", "price": 1940, "change": "+1.0%", "is_up": true },
+          { "label": "Week", "price": 1980, "change": "+3.1%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Gorakhpur Mandi", "price": "₹1,940", "change": "+0.5%", "distance": "35 km" },
+          { "name": "Jaunpur Mandi", "price": "₹1,910", "change": "-0.3%", "distance": "22 km" },
+          { "name": "Ballia Mandi", "price": "₹1,890", "change": "-1.0%", "distance": "48 km" }
+        ],
+        "selling_tip": "Poultry feed industrial demand projected to spike next week."
+      },
+      {
+        "id": "Soybean",
+        "name": "Soybean",
+        "name_hi": "सोयाबीन",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 4450, "change": "+3.1%", "is_up": true },
+          "Azadpur Mandi": { "price": 4520, "change": "+2.8%", "is_up": true },
+          "Pune APMC": { "price": 4650, "change": "+3.5%", "is_up": true },
+          "Kanpur Mandi": { "price": 4400, "change": "+2.2%", "is_up": true },
+          "Pune Market": { "price": 4620, "change": "+3.0%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 4200 },
+            { "label": "Tue", "price": 4250 },
+            { "label": "Wed", "price": 4310 },
+            { "label": "Thu", "price": 4360 },
+            { "label": "Fri", "price": 4390 },
+            { "label": "Sat", "price": 4420 },
+            { "label": "Sun", "price": 4450 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 4050 },
+            { "label": "W2", "price": 4180 },
+            { "label": "W3", "price": 4320 },
+            { "label": "W4", "price": 4450 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 3850 },
+            { "label": "Jul", "price": 4020 },
+            { "label": "Aug", "price": 4250 },
+            { "label": "Sep", "price": 4450 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 4450, "change": "+3.1%", "is_up": true },
+          { "label": "Tomorrow", "price": 4510, "change": "+1.3%", "is_up": true },
+          { "label": "Week", "price": 4620, "change": "+2.4%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Indore Mandi", "price": "₹4,680", "change": "+3.8%", "distance": "Nearby Hub" },
+          { "name": "Ujjain Mandi", "price": "₹4,610", "change": "+2.9%", "distance": "Nearby Hub" },
+          { "name": "Nagpur APMC", "price": "₹4,590", "change": "+2.5%", "distance": "Nearby Hub" }
+        ],
+        "selling_tip": "High crushing plant demand. Best time to sell within 7-10 days."
+      },
+      {
+        "id": "Cotton",
+        "name": "Cotton",
+        "name_hi": "कपास",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 7050, "change": "+1.1%", "is_up": true },
+          "Azadpur Mandi": { "price": 7180, "change": "+1.6%", "is_up": true },
+          "Pune APMC": { "price": 7350, "change": "+2.0%", "is_up": true },
+          "Kanpur Mandi": { "price": 6980, "change": "+0.9%", "is_up": true },
+          "Pune Market": { "price": 7300, "change": "+1.8%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 6900 },
+            { "label": "Tue", "price": 6940 },
+            { "label": "Wed", "price": 6980 },
+            { "label": "Thu", "price": 7010 },
+            { "label": "Fri", "price": 7020 },
+            { "label": "Sat", "price": 7040 },
+            { "label": "Sun", "price": 7050 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 6750 },
+            { "label": "W2", "price": 6880 },
+            { "label": "W3", "price": 6990 },
+            { "label": "W4", "price": 7050 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 6400 },
+            { "label": "Jul", "price": 6650 },
+            { "label": "Aug", "price": 6890 },
+            { "label": "Sep", "price": 7050 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 7050, "change": "+1.1%", "is_up": true },
+          { "label": "Tomorrow", "price": 7120, "change": "+1.0%", "is_up": true },
+          { "label": "Week", "price": 7250, "change": "+1.8%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Rajkot Mandi", "price": "₹7,380", "change": "+2.2%", "distance": "Direct Line" },
+          { "name": "Akola APMC", "price": "₹7,290", "change": "+1.9%", "distance": "Direct Line" },
+          { "name": "Yavatmal Mandi", "price": "₹7,210", "change": "+1.4%", "distance": "Direct Line" }
+        ],
+        "selling_tip": "Mill procurement active. Premium prices for long staple variety."
+      },
+      {
+        "id": "Mustard",
+        "name": "Mustard",
+        "name_hi": "सरसों",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 5320, "change": "+2.3%", "is_up": true },
+          "Azadpur Mandi": { "price": 5480, "change": "+2.7%", "is_up": true },
+          "Pune APMC": { "price": 5520, "change": "+1.5%", "is_up": true },
+          "Kanpur Mandi": { "price": 5280, "change": "+1.8%", "is_up": true },
+          "Pune Market": { "price": 5500, "change": "+1.4%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 5150 },
+            { "label": "Tue", "price": 5190 },
+            { "label": "Wed", "price": 5220 },
+            { "label": "Thu", "price": 5270 },
+            { "label": "Fri", "price": 5290 },
+            { "label": "Sat", "price": 5310 },
+            { "label": "Sun", "price": 5320 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 4980 },
+            { "label": "W2", "price": 5100 },
+            { "label": "W3", "price": 5230 },
+            { "label": "W4", "price": 5320 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 4750 },
+            { "label": "Jul", "price": 4920 },
+            { "label": "Aug", "price": 5140 },
+            { "label": "Sep", "price": 5320 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 5320, "change": "+2.3%", "is_up": true },
+          { "label": "Tomorrow", "price": 5380, "change": "+1.1%", "is_up": true },
+          { "label": "Week", "price": 5490, "change": "+2.0%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Bharatpur Mandi", "price": "₹5,520", "change": "+2.9%", "distance": "32 km" },
+          { "name": "Alwar Mandi", "price": "₹5,460", "change": "+2.4%", "distance": "50 km" },
+          { "name": "Jaipur APMC", "price": "₹5,500", "change": "+2.5%", "distance": "80 km" }
+        ],
+        "selling_tip": "Oil mills active. High oil content lots fetch up to ₹150 premium."
+      },
+      {
+        "id": "Potato",
+        "name": "Potato",
+        "name_hi": "आलू",
+        "unit": "₹/quintal",
+        "mandis": {
+          "Ghazipur Mandi": { "price": 1380, "change": "-1.5%", "is_up": false },
+          "Azadpur Mandi": { "price": 1520, "change": "+0.8%", "is_up": true },
+          "Pune APMC": { "price": 1600, "change": "+1.2%", "is_up": true },
+          "Kanpur Mandi": { "price": 1320, "change": "-2.1%", "is_up": false },
+          "Pune Market": { "price": 1580, "change": "+0.9%", "is_up": true }
+        },
+        "trends": {
+          "7D": [
+            { "label": "Mon", "price": 1420 },
+            { "label": "Tue", "price": 1410 },
+            { "label": "Wed", "price": 1395 },
+            { "label": "Thu", "price": 1390 },
+            { "label": "Fri", "price": 1385 },
+            { "label": "Sat", "price": 1375 },
+            { "label": "Sun", "price": 1380 }
+          ],
+          "30D": [
+            { "label": "W1", "price": 1490 },
+            { "label": "W2", "price": 1450 },
+            { "label": "W3", "price": 1410 },
+            { "label": "W4", "price": 1380 }
+          ],
+          "90D": [
+            { "label": "Jun", "price": 1250 },
+            { "label": "Jul", "price": 1380 },
+            { "label": "Aug", "price": 1460 },
+            { "label": "Sep", "price": 1380 }
+          ]
+        },
+        "forecast": [
+          { "label": "Today", "price": 1380, "change": "-1.5%", "is_up": false },
+          { "label": "Tomorrow", "price": 1360, "change": "-1.4%", "is_up": false },
+          { "label": "Week", "price": 1410, "change": "+3.7%", "is_up": true }
+        ],
+        "nearby_mandis": [
+          { "name": "Farrukhabad Mandi", "price": "₹1,280", "change": "-2.5%", "distance": "Cold Storage Hub" },
+          { "name": "Agra APMC", "price": "₹1,340", "change": "-1.8%", "distance": "Major Market" },
+          { "name": "Meerut Mandi", "price": "₹1,420", "change": "+0.2%", "distance": "Regional Hub" }
+        ],
+        "selling_tip": "Cold storage release rates increasing. Short-term dip expected."
+      }
+    ]
+  }
+}
