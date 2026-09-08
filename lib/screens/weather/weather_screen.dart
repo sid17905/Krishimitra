@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../core/result_state.dart';
+import '../../models/weather_data.dart';
+import '../../providers/weather_provider.dart';
+import '../../services/tts_service.dart';
+import '../../widgets/state_widgets.dart';
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -9,73 +16,146 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  String _selectedLocation = 'Ghazipur, UP';
   String _selectedSeason = 'Kharif';
 
-  final List<String> _locations = [
-    'Ghazipur, UP',
-    'Varanasi, UP',
-    'Patna, Bihar',
-    'Pune, MH',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Kick off the first live fetch after the frame is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<WeatherProvider>();
+      if (p.state is! SuccessState) p.load();
+    });
+  }
 
-  final List<Map<String, dynamic>> _dailyForecast = [
-    {'day': 'Today', 'icon': Icons.wb_sunny, 'temp': '28°/18°', 'rain': '0%', 'desc': 'Sunny'},
-    {'day': 'Tomorrow', 'icon': Icons.cloud, 'temp': '27°/17°', 'rain': '10%', 'desc': 'Cloudy'},
-    {'day': 'Wed', 'icon': Icons.water_drop, 'temp': '26°/16°', 'rain': '60%', 'desc': 'Rain'},
-    {'day': 'Thu', 'icon': Icons.thunderstorm, 'temp': '25°/15°', 'rain': '80%', 'desc': 'Storm'},
-    {'day': 'Fri', 'icon': Icons.cloud, 'temp': '27°/17°', 'rain': '20%', 'desc': 'Cloudy'},
-    {'day': 'Sat', 'icon': Icons.wb_sunny, 'temp': '29°/19°', 'rain': '0%', 'desc': 'Sunny'},
-    {'day': 'Sun', 'icon': Icons.wb_sunny, 'temp': '30°/20°', 'rain': '0%', 'desc': 'Sunny'},
-  ];
-
-  final List<Map<String, dynamic>> _stormAdvisory = [
-    {
-      'type': 'Nowcast Warning',
-      'desc': 'Thunderstorm expected within 3 hours',
-      'icon': Icons.thunderstorm,
-      'color': AppColors.alertRed,
-      'time': 'Now',
-    },
-    {
-      'type': 'Heat Advisory',
-      'desc': 'Temperature expected to reach 35°C',
-      'icon': Icons.thermostat,
-      'color': AppColors.warningOrange,
-      'time': 'In 2 days',
-    },
-  ];
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<WeatherProvider>();
+    final state = provider.state;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weather Intelligence'),
+        title: Text(context.tr('weather_title')),
         backgroundColor: AppColors.waterBlue,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: SourceBadge(
+                isLive: provider.isLive,
+                liveLabel: context.tr('live_badge'),
+                offlineLabel: context.tr('offline_badge'),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: TtsService.instance.playingNotifier,
+            builder: (context, isPlaying, _) {
+              return IconButton(
+                icon: Icon(isPlaying ? Icons.stop_circle : Icons.volume_up),
+                tooltip: isPlaying ? context.tr('stop') : context.tr('read_out'),
+                onPressed: () {
+                  if (isPlaying) {
+                    TtsService.instance.stop();
+                  } else {
+                    final state = provider.state;
+                    if (state is SuccessState<WeatherData>) {
+                      final data = state.data;
+                      final locale = context.langCode;
+                      final text =
+                          '${data.temperature.toStringAsFixed(0)} degrees celsius, ${data.condition}, humidity ${data.humidity.toStringAsFixed(0)} percent, wind ${data.windSpeed.toStringAsFixed(0)} km/h, rainfall ${data.rainfall.toStringAsFixed(0)} mm';
+                      TtsService.instance.speak(text, locale);
+                    }
+                  }
+                },
+              );
+            },
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLocationSelector(),
-            const SizedBox(height: 16),
-            _buildCurrentWeather(),
-            const SizedBox(height: 24),
-            _buildSeasonSelector(),
-            const SizedBox(height: 12),
-            _buildSeasonalAdvice(),
-            const SizedBox(height: 24),
-            _buildDailyForecast(),
-            const SizedBox(height: 24),
-            _buildNowcastAdvisories(),
-          ],
-        ),
+      // Pull-to-refresh: dragging down re-runs the live fetch.
+      body: RefreshIndicator(
+        color: AppColors.waterBlue,
+        onRefresh: () => context.read<WeatherProvider>().load(),
+        child: _buildBody(context, provider, state),
       ),
     );
   }
 
-  Widget _buildLocationSelector() {
+  Widget _buildBody(
+    BuildContext context,
+    WeatherProvider provider,
+    ResultState<WeatherData> state,
+  ) {
+    // The switch is exhaustive thanks to the sealed ResultState type.
+    switch (state) {
+      case LoadingState():
+        // Skeleton must be scrollable so RefreshIndicator still works.
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [ShimmerList(items: 3)],
+        );
+
+      case ErrorState(:final message, :final isTimeout):
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: ErrorRetry(
+                message: isTimeout ? context.tr('error_timeout') : message,
+                isTimeout: isTimeout,
+                retryLabel: context.tr('retry'),
+                onRetry: () => context.read<WeatherProvider>().load(),
+              ),
+            ),
+          ],
+        );
+
+      case SuccessState(:final data):
+        return _buildSuccess(context, provider, data);
+    }
+  }
+
+  Widget _buildSuccess(
+    BuildContext context,
+    WeatherProvider provider,
+    WeatherData data,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLocationSelector(context, provider),
+          const SizedBox(height: 8),
+          Text(
+            context.tr('pull_to_refresh'),
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          _buildCurrentWeather(data),
+          const SizedBox(height: 24),
+          _buildSeasonSelector(),
+          const SizedBox(height: 12),
+          _buildSeasonalAdvice(),
+          const SizedBox(height: 24),
+          _buildDailyForecast(data),
+          const SizedBox(height: 24),
+          _buildNowcastAdvisories(data),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationSelector(BuildContext context, WeatherProvider provider) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -89,14 +169,15 @@ class _WeatherScreenState extends State<WeatherScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: DropdownButton<String>(
-              value: _selectedLocation,
+              value: provider.selectedLocation,
               isExpanded: true,
               underline: const SizedBox(),
-              items: _locations.map((l) => DropdownMenuItem(
-                value: l,
-                child: Text(l),
-              )).toList(),
-              onChanged: (v) => setState(() => _selectedLocation = v!),
+              items: WeatherProvider.locations.keys
+                  .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) context.read<WeatherProvider>().selectLocation(v);
+              },
             ),
           ),
         ],
@@ -104,7 +185,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Widget _buildCurrentWeather() {
+  Widget _buildCurrentWeather(WeatherData data) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -117,19 +198,19 @@ class _WeatherScreenState extends State<WeatherScreen> {
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Monday',
-                    style: TextStyle(color: Colors.white70),
+                    context.tr('updated_just_now'),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                   Text(
-                    'Ghazipur, UP',
-                    style: TextStyle(
+                    data.location,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -137,7 +218,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                 ],
               ),
-              Icon(Icons.wb_sunny, size: 40, color: Colors.amber),
+              Icon(_conditionIcon(data.condition), size: 40, color: Colors.amber),
             ],
           ),
           const SizedBox(height: 20),
@@ -146,30 +227,32 @@ class _WeatherScreenState extends State<WeatherScreen> {
               Column(
                 children: [
                   Text(
-                    '28°C',
-                    style: TextStyle(
+                    '${data.temperature.toStringAsFixed(0)}°C',
+                    style: const TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
                   Text(
-                    'Mostly Sunny',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                    ),
+                    data.condition,
+                    style: TextStyle(color: Colors.white.withOpacity(0.8)),
                   ),
                 ],
               ),
               const SizedBox(width: 40),
-              Row(
-                children: [
-                  _buildWeatherMetric(Icons.cloud, '10%', 'Humidity'),
-                  const SizedBox(width: 12),
-                  _buildWeatherMetric(Icons.air, '12 km/h', 'Wind'),
-                  const SizedBox(width: 12),
-                  _buildWeatherMetric(Icons.water_drop, '0%', 'Rain'),
-                ],
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildWeatherMetric(Icons.cloud,
+                        '${data.humidity.toStringAsFixed(0)}%', context.tr('humidity_label')),
+                    _buildWeatherMetric(Icons.air,
+                        '${data.windSpeed.toStringAsFixed(0)} km/h', context.tr('wind_label')),
+                    _buildWeatherMetric(Icons.water_drop,
+                        '${data.rainfall.toStringAsFixed(0)} mm', context.tr('rain_label')),
+                  ],
+                ),
               ),
             ],
           ),
@@ -193,10 +276,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
         ),
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 11,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
         ),
       ],
     );
@@ -238,18 +318,18 @@ class _WeatherScreenState extends State<WeatherScreen> {
   Widget _buildSeasonalAdvice() {
     final Map<String, Object> info = _selectedSeason == 'Kharif'
         ? {
-            'crop': 'Paddy, Soybean, Cotton',
+            'crop': 'Paddy, Soybean, Cotton, Maize',
             'advice': 'Planting season has begun. Soil moisture is good for sowing.',
             'color': AppColors.primaryGreen,
           }
         : _selectedSeason == 'Rabi'
             ? {
-                'crop': 'Wheat, Gram, Mustard',
+                'crop': 'Wheat, Gram, Mustard, Barley',
                 'advice': 'Optimal time for wheat sowing. Water availability is adequate.',
                 'color': AppColors.waterBlue,
               }
             : {
-                'crop': 'Cucumber, Watermelon',
+                'crop': 'Cucumber, Watermelon, Fodder Maize',
                 'advice': 'Summer crop season. Ensure irrigation during dry spells.',
                 'color': AppColors.warningOrange,
               };
@@ -258,7 +338,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border(
           left: BorderSide(color: info['color'] as Color, width: 4),
         ),
@@ -271,97 +351,81 @@ class _WeatherScreenState extends State<WeatherScreen> {
               Icon(Icons.lightbulb, color: info['color'] as Color),
               const SizedBox(width: 8),
               Text(
-                '$_selectedSeason Season Advice',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                '$_selectedSeason ${context.tr('season_advice')}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'Recommended crops: ${info['crop']}',
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text('${context.tr('recommended_crops')}: ${info['crop']}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           Text(
             info['advice'] as String,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDailyForecast() {
+  Widget _buildDailyForecast(WeatherData data) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '7-Day Outlook',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          Text(context.tr('daily_outlook'),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           SizedBox(
             height: 140,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _dailyForecast.length,
+              itemCount: data.dailyForecast.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
-                final day = _dailyForecast[index];
+                final day = data.dailyForecast[index];
+                final rain = day.rainChance;
                 return Container(
                   width: 90,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.waterBlue.withOpacity(day['rain'] == '0%'
-                        ? 0.1
-                        : (day['rain'] == '80%' ? 0.3 : 0.2)),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.waterBlue
+                        .withOpacity(rain == 0 ? 0.08 : (rain >= 80 ? 0.25 : 0.15)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.waterBlue.withOpacity(0.2)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        day['day'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(day.day,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Icon(
-                        day['icon'],
-                        color: day['rain'] == '80%'
+                        _conditionIcon(day.condition),
+                        color: rain >= 80
                             ? AppColors.alertRed
                             : AppColors.waterBlue,
-                        size: 32,
+                        size: 30,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        day['temp'],
+                        '${day.maxTemp.toStringAsFixed(0)}°/${day.minTemp.toStringAsFixed(0)}°',
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                            fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        day['rain'],
+                        '${rain.toStringAsFixed(0)}%',
                         style: TextStyle(
                           fontSize: 11,
-                          color: day['rain'] == '0%'
-                              ? Colors.green
-                              : AppColors.warningOrange,
+                          fontWeight: FontWeight.bold,
+                          color: rain == 0 ? Colors.green.shade700 : AppColors.warningOrange,
                         ),
                       ),
                     ],
@@ -375,64 +439,82 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Widget _buildNowcastAdvisories() {
+  Widget _buildNowcastAdvisories(WeatherData data) {
+    if (data.nowcast.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppColors.primaryGreen),
+            SizedBox(width: 8),
+            Expanded(child: Text('No severe weather expected in the near term.')),
+          ],
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.radar, color: AppColors.alertRed),
-            SizedBox(width: 8),
-            Text(
-              'Nowcast & Advisory',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            const Icon(Icons.radar, color: AppColors.alertRed),
+            const SizedBox(width: 8),
+            Text(context.tr('nowcast_advisory'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 12),
-        ..._stormAdvisory.map((a) => Container(
-          padding: const EdgeInsets.all(12),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: a['color'].withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: a['color'].withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              Icon(a['icon'], color: a['color']),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      a['type'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: a['color'],
-                      ),
-                    ),
-                    Text(
-                      a['desc'],
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ],
+        ...data.nowcast.map((a) {
+          final color =
+              a.severity == 'High' ? AppColors.alertRed : AppColors.warningOrange;
+          return Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withOpacity(0.5)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.thunderstorm, color: color),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(a.type,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: color)),
+                      Text(a.description,
+                          style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                a['time'],
-                style: TextStyle(
-                  color: a['color'],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        )),
+                Text(a.source,
+                    style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11)),
+              ],
+            ),
+          );
+        }),
       ],
     );
+  }
+
+  IconData _conditionIcon(String condition) {
+    final c = condition.toLowerCase();
+    if (c.contains('storm') || c.contains('thunder')) return Icons.thunderstorm;
+    if (c.contains('rain') || c.contains('drizzle')) return Icons.water_drop;
+    if (c.contains('cloud')) return Icons.cloud;
+    if (c.contains('snow')) return Icons.ac_unit;
+    return Icons.wb_sunny;
   }
 }
 
@@ -464,10 +546,7 @@ class _SeasonTab extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : AppColors.primaryGreen,
-            ),
+            Icon(icon, color: isSelected ? Colors.white : AppColors.primaryGreen),
             const SizedBox(height: 4),
             Text(
               label,

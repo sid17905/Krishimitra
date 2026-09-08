@@ -9,9 +9,23 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Flutter's own localization delegates (dates, numbers, Material widgets)
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.6
   http: ^1.1.0
+  flutter_dotenv: ^6.0.1
+  # Global state management for cross-page language + data state
+  provider: ^6.1.2
+  # Persist the selected language across app restarts
+  shared_preferences: ^2.2.3
+  # Skeleton loading placeholders during API calls
+  shimmer: ^3.0.0
+  # Locale-aware date/number formatting
+  intl: ^0.20.2
+  # Text to Speech for reading out AI responses & alerts in local languages
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
@@ -21,7 +35,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/images/
     - assets/icons/
     - assets/fonts/
     - assets/data/
+    # Local knowledge files the on-device RAG engine scans & grounds the AI on
+    - assets/knowledge/

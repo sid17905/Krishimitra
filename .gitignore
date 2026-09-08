@@ -1,6 +1,12 @@
+# Secrets & Environment
+.env
+*.env
+!.env.example
+
 # Flutter SDK and archives
 flutter_windows_*/
 *.zip
+apk/app-debug.apk
 krishimitra_redesign/
 krishimitra omni!/
 

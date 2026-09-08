@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../core/result_state.dart';
+import '../../models/market_price.dart';
 import '../../models/market_data_source.dart';
+import '../../providers/market_provider.dart';
+import '../../services/tts_service.dart';
+import '../../widgets/state_widgets.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -10,72 +17,168 @@ class MarketScreen extends StatefulWidget {
 }
 
 class _MarketScreenState extends State<MarketScreen> {
-  String _selectedCrop = 'Wheat';
   String _selectedMandi = 'Ghazipur Mandi';
   String _timeRange = '7D';
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch live prices on entry if not already loaded.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<MarketProvider>();
+      if (p.state is! SuccessState) p.load();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final cropInfo = MarketDataRepository.getCropData(_selectedCrop);
-    final mandiDetail = cropInfo.mandiPrices[_selectedMandi] ??
-        cropInfo.mandiPrices.values.first;
+    final provider = context.watch<MarketProvider>();
+    final state = provider.state;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           children: [
             Text(
-              'Market Prices',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              context.tr('market_title'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
-            Text(
+            const Text(
               'बाज़ार मूल्य (मंडी भाव)',
-              style: TextStyle(fontSize: 12, color: Colors.white70),
+              style: TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
         ),
         backgroundColor: AppColors.warningOrange,
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: SourceBadge(
+                isLive: provider.isLive,
+                liveLabel: context.tr('live_badge'),
+                offlineLabel: context.tr('offline_badge'),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildCropSelector(),
-            const SizedBox(height: 16),
-            _buildPriceCard(cropInfo, mandiDetail),
-            const SizedBox(height: 16),
-            _buildFilters(),
-            const SizedBox(height: 12),
-            _buildPriceChart(cropInfo),
-            const SizedBox(height: 16),
-            _buildSellingTip(cropInfo),
-            const SizedBox(height: 16),
-            _buildPriceForecast(cropInfo),
-            const SizedBox(height: 16),
-            _buildNearbyMandiSection(cropInfo),
-            const SizedBox(height: 20),
-          ],
-        ),
+      // Pull-to-refresh
+      body: RefreshIndicator(
+        color: AppColors.warningOrange,
+        onRefresh: () => context.read<MarketProvider>().load(),
+        child: _buildBody(context, provider, state),
       ),
     );
   }
 
-  Widget _buildCropSelector() {
+  Widget _buildBody(
+    BuildContext context,
+    MarketProvider provider,
+    ResultState<List<MarketPrice>> state,
+  ) {
+    switch (state) {
+      case LoadingState():
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [ShimmerList(items: 4)],
+        );
+
+      case ErrorState(:final message, :final isTimeout):
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: ErrorRetry(
+                message: isTimeout ? context.tr('error_timeout') : message,
+                isTimeout: isTimeout,
+                retryLabel: context.tr('retry'),
+                onRetry: () => context.read<MarketProvider>().load(),
+              ),
+            ),
+          ],
+        );
+
+      case SuccessState(:final data):
+        return _buildContent(context, provider, data);
+    }
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    MarketProvider provider,
+    List<MarketPrice> prices,
+  ) {
+    final cropInfo = MarketDataRepository.getCropData(provider.selectedCrop);
+
+    // If live prices carry a matching mandi, prefer its live price
+    MarketPrice? matchedLive;
+    for (final p in prices) {
+      if (p.mandi.toLowerCase().contains(_selectedMandi.toLowerCase()) ||
+          _selectedMandi.toLowerCase().contains(p.mandi.toLowerCase())) {
+        matchedLive = p;
+        break;
+      }
+    }
+    final mandiDetail = cropInfo.mandiPrices[_selectedMandi] ??
+        cropInfo.mandiPrices.values.first;
+
+    final displayPrice = matchedLive != null
+        ? matchedLive.pricePerQuintal.toInt()
+        : mandiDetail.price;
+    final displayChange = matchedLive != null
+        ? '${matchedLive.changePercent >= 0 ? '+' : ''}${matchedLive.changePercent}%'
+        : mandiDetail.change;
+    final isUp = matchedLive != null
+        ? matchedLive.changePercent >= 0
+        : mandiDetail.isUp;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCropSelector(provider),
+          const SizedBox(height: 8),
+          Text(
+            context.tr('pull_to_refresh'),
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          _buildPriceCard(cropInfo, displayPrice, displayChange, isUp),
+          const SizedBox(height: 16),
+          _buildFilters(prices),
+          const SizedBox(height: 12),
+          _buildPriceChart(cropInfo, displayPrice),
+          const SizedBox(height: 16),
+          _buildSellingTip(cropInfo),
+          const SizedBox(height: 16),
+          _buildPriceForecast(cropInfo),
+          const SizedBox(height: 16),
+          _buildNearbyMandiSection(cropInfo, prices),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCropSelector(MarketProvider provider) {
     return SizedBox(
       height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: MarketDataRepository.crops.length,
+        itemCount: provider.crops.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final crop = MarketDataRepository.crops[index];
-          final isSelected = crop == _selectedCrop;
+          final crop = provider.crops[index];
+          final isSelected = crop == provider.selectedCrop;
           final cropData = MarketDataRepository.getCropData(crop);
           return GestureDetector(
-            onTap: () => setState(() => _selectedCrop = crop),
+            onTap: () => context.read<MarketProvider>().selectCrop(crop),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -113,7 +216,24 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildPriceCard(CropStaticMarketInfo cropInfo, MandiPriceDetail mandiDetail) {
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    super.dispose();
+  }
+
+Widget _buildPriceCard(
+    CropStaticMarketInfo cropInfo,
+    int price,
+    String change,
+    bool isUp,
+  ) {
+    final cropName = '${cropInfo.name} (${cropInfo.nameHi})';
+    final changeForSpeech = change.replaceAll('%', ' percent');
+    final speakText =
+        '$cropName market price is ${price.toStringAsFixed(0)} rupees per quintal, change of $changeForSpeech.';
+    final priceText = '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -141,17 +261,13 @@ class _MarketScreenState extends State<MarketScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      '${cropInfo.name} (${cropInfo.nameHi})',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+                Text(
+                  cropName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -162,27 +278,58 @@ class _MarketScreenState extends State<MarketScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  '₹${mandiDetail.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: TtsService.instance.playingNotifier,
+                        builder: (context, isPlaying, _) {
+                          return Text(
+                            priceText,
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: TtsService.instance.playingNotifier,
+                      builder: (context, isPlaying, _) {
+                        return IconButton(
+                          icon: Icon(
+                            isPlaying ? Icons.stop_circle : Icons.volume_up,
+                            color: isPlaying ? AppColors.alertRed : Colors.white,
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            if (isPlaying) {
+                              TtsService.instance.stop();
+                            } else {
+                              TtsService.instance.speak(speakText, context.langCode);
+                            }
+                          },
+                          tooltip: isPlaying ? 'Stop' : 'Read Out',
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(
-                      mandiDetail.isUp ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: mandiDetail.isUp ? Colors.lightGreenAccent : Colors.yellowAccent,
+                      isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                      color: isUp ? Colors.lightGreenAccent : Colors.yellowAccent,
                       size: 18,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${mandiDetail.change} today',
+                      '$change today',
                       style: TextStyle(
-                        color: mandiDetail.isUp ? Colors.lightGreenAccent : Colors.yellowAccent,
+                        color: isUp ? Colors.lightGreenAccent : Colors.yellowAccent,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -212,7 +359,16 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(List<MarketPrice> livePrices) {
+    // Combine known mandis with any newly discovered live mandis
+    final availableMandis = <String>{...MarketDataRepository.mandis};
+    for (final p in livePrices) {
+      if (p.mandi.isNotEmpty) availableMandis.add(p.mandi);
+    }
+    if (!availableMandis.contains(_selectedMandi)) {
+      _selectedMandi = availableMandis.first;
+    }
+
     return Row(
       children: [
         Expanded(
@@ -235,19 +391,19 @@ class _MarketScreenState extends State<MarketScreen> {
               isExpanded: true,
               underline: const SizedBox(),
               icon: const Icon(Icons.store, color: AppColors.warningOrange, size: 20),
-              items: MarketDataRepository.mandis
+              items: availableMandis
                   .map((m) => DropdownMenuItem(
                         value: m,
                         child: Text(
                           m,
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ))
                   .toList(),
               onChanged: (v) {
-                if (v != null) {
-                  setState(() => _selectedMandi = v);
-                }
+                if (v != null) setState(() => _selectedMandi = v);
               },
             ),
           ),
@@ -281,9 +437,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     ))
                 .toList(),
             onChanged: (v) {
-              if (v != null) {
-                setState(() => _timeRange = v);
-              }
+              if (v != null) setState(() => _timeRange = v);
             },
           ),
         ),
@@ -291,15 +445,12 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildPriceChart(CropStaticMarketInfo cropInfo) {
+  Widget _buildPriceChart(CropStaticMarketInfo cropInfo, int currentBasePrice) {
     final List<Map<String, dynamic>> rawData =
         cropInfo.trends[_timeRange] ?? cropInfo.trends['7D']!;
 
-    // Adjust chart data based on selected Mandi price factor
-    final mandiDetail = cropInfo.mandiPrices[_selectedMandi];
-    final int basePrice = mandiDetail?.price ?? rawData.last['price'] as int;
     final int referenceLast = rawData.last['price'] as int;
-    final int diff = basePrice - referenceLast;
+    final int diff = currentBasePrice - referenceLast;
 
     final data = rawData.map((d) {
       return {
@@ -405,6 +556,7 @@ class _MarketScreenState extends State<MarketScreen> {
   }
 
   Widget _buildSellingTip(CropStaticMarketInfo cropInfo) {
+    final isHindi = context.langCode == 'hi' || context.langCode == 'mr';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -413,11 +565,11 @@ class _MarketScreenState extends State<MarketScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryGreen.withOpacity(0.25),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
@@ -427,7 +579,7 @@ class _MarketScreenState extends State<MarketScreen> {
           const Icon(
             Icons.lightbulb_outline,
             color: Colors.amberAccent,
-            size: 32,
+            size: 30,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -435,19 +587,20 @@ class _MarketScreenState extends State<MarketScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  cropInfo.sellingTip,
+                  context.tr('selling_tip'),
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
+                    color: AppColors.lightGreen,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  cropInfo.sellingTipHi,
+                  isHindi ? cropInfo.sellingTipHi : cropInfo.sellingTip,
                   style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -475,14 +628,14 @@ class _MarketScreenState extends State<MarketScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Price Forecast (मूल्य पूर्वानुमान)',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                context.tr('forecast'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
-              Icon(Icons.auto_graph, color: AppColors.primaryGreen, size: 20),
+              const Icon(Icons.auto_graph, color: AppColors.primaryGreen, size: 20),
             ],
           ),
           const SizedBox(height: 12),
@@ -546,22 +699,35 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildNearbyMandiSection(CropStaticMarketInfo cropInfo) {
+  Widget _buildNearbyMandiSection(
+    CropStaticMarketInfo cropInfo,
+    List<MarketPrice> livePrices,
+  ) {
+    // If live prices returned multiple mandis, display those; otherwise fall back.
+    final items = livePrices.isNotEmpty
+        ? livePrices.take(4).map((p) => {
+              'name': p.mandi,
+              'price': '₹${p.pricePerQuintal.toInt()}',
+              'change':
+                  '${p.changePercent >= 0 ? '+' : ''}${p.changePercent}%',
+            }).toList()
+        : cropInfo.nearbyMandis;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.storefront, color: AppColors.primaryGreen, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.storefront, color: AppColors.primaryGreen, size: 20),
+            const SizedBox(width: 8),
             Text(
-              'Nearby Mandi Prices (आस-पास के मंडी भाव)',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              context.tr('nearby_mandis'),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        ...cropInfo.nearbyMandis.map((m) {
+        ...items.map((m) {
           final String changeStr = m['change'] ?? '+1.0%';
           final bool isUp = !changeStr.startsWith('-');
           return Container(
@@ -659,7 +825,6 @@ class _LineChartPainter extends CustomPainter {
     final chartHeight = size.height;
     const padding = 8.0;
 
-    // Draw grid lines
     final gridPaint = Paint()
       ..color = AppColors.textSecondary.withOpacity(0.15)
       ..strokeWidth = 0.5;
@@ -673,7 +838,6 @@ class _LineChartPainter extends CustomPainter {
       );
     }
 
-    // Draw line
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 3
@@ -697,7 +861,6 @@ class _LineChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // Fill area under curve
     final path = Path();
     path.moveTo(points.first.dx, chartHeight - padding);
     for (final p in points) {
@@ -707,7 +870,6 @@ class _LineChartPainter extends CustomPainter {
     path.close();
     canvas.drawPath(path, fillPaint);
 
-    // Draw line connecting points
     final linePath = Path();
     linePath.moveTo(points.first.dx, points.first.dy);
     for (int i = 1; i < points.length; i++) {
@@ -715,7 +877,6 @@ class _LineChartPainter extends CustomPainter {
     }
     canvas.drawPath(linePath, linePaint);
 
-    // Draw points
     final pointPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../services/tts_service.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});
@@ -10,6 +12,12 @@ class AlertsScreen extends StatefulWidget {
 
 class _AlertsScreenState extends State<AlertsScreen> {
   String _filter = 'All';
+
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    super.dispose();
+  }
 
   final List<Map<String, dynamic>> _alerts = [
     {
@@ -79,7 +87,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alerts & Warnings'),
+        title: Text(context.tr('alerts_title')),
         backgroundColor: AppColors.alertRed,
         actions: [
           IconButton(
@@ -121,19 +129,19 @@ class _AlertsScreenState extends State<AlertsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _AlertStatItem(
-            label: 'Nowcast',
+            label: context.tr('nowcast'),
             count: nowcast,
             icon: Icons.thunderstorm,
             color: AppColors.waterBlue,
           ),
           _AlertStatItem(
-            label: 'Contamination',
+            label: context.tr('contamination'),
             count: contamination,
             icon: Icons.warning,
             color: AppColors.warningOrange,
           ),
           _AlertStatItem(
-            label: 'Advisory',
+            label: context.tr('advisory'),
             count: advisory,
             icon: Icons.lightbulb,
             color: AppColors.primaryGreen,
@@ -155,11 +163,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: Text(f),
+                label: Text(f == 'All' ? 'All' : (f == 'Nowcast' ? context.tr('nowcast') : (f == 'Contamination' ? context.tr('contamination') : context.tr('advisory')))),
                 selected: isSelected,
                 selectedColor: AppColors.primaryGreen,
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
                 onSelected: (_) => setState(() => _filter = f),
               ),
@@ -180,25 +190,39 @@ class _AlertsScreenState extends State<AlertsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '🌾 Smart Alerts Active',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              const Icon(Icons.shield, color: AppColors.lightGreen, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                context.tr('smart_alerts_active'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'KrishiMitra monitors your field 24/7 combining ESP32 sensors, IMD nowcast radar, and CPCB water quality data.',
-            style: TextStyle(
+          const SizedBox(height: 6),
+          Text(
+            context.tr('smart_alerts_sub'),
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
+              height: 1.4,
             ),
           ),
         ],
@@ -340,7 +364,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Suggested action: ${alert['action']}',
+                    '${context.tr('suggested_action')}: ${alert['action']}',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -355,24 +379,44 @@ class _AlertsScreenState extends State<AlertsScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.langCode == 'hi' ? 'अलर्ट चिन्हित किया गया' : 'Alert acknowledged'),
+                      duration: const Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: AppColors.primaryGreen,
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.check, size: 16),
-                label: const Text('Got it'),
+                label: Text(context.tr('got_it')),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
                 ),
               ),
-              TextButton.icon(
-                onPressed: () {},
+              ElevatedButton.icon(
+                onPressed: () {
+                  final alertSpeech = '${alert['title']}. ${alert['desc']}. ${context.tr('suggested_action')}: ${alert['action']}';
+                  TtsService.instance.speak(alertSpeech, context.langCode);
+                },
                 icon: const Icon(Icons.volume_up, size: 16),
-                label: const Text('Hear')
+                label: Text(context.tr('hear')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: alertColor.withOpacity(0.15),
+                  foregroundColor: alertColor,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
+              const SizedBox(width: 6),
               TextButton.icon(
                 onPressed: () {
                   Navigator.pushNamed(context, '/sensors');
                 },
                 icon: const Icon(Icons.sensors, size: 16),
-                label: const Text('Sensors'),
+                label: Text(context.tr('sensors')),
               ),
             ],
           ),

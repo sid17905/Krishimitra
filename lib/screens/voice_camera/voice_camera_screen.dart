@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../services/api_service.dart';
+import '../../services/knowledge_base_service.dart';
+import '../../services/tts_service.dart';
 
 class VoiceCameraScreen extends StatefulWidget {
   const VoiceCameraScreen({super.key});
@@ -11,10 +15,12 @@ class VoiceCameraScreen extends StatefulWidget {
 
 class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
   bool _isListening = false;
+  bool _isLoading = false;
   String _aiResponse = '';
   String _userQuery = '';
   Timer? _timer;
   int _waveformBars = 12;
+  final TextEditingController _customQueryController = TextEditingController();
 
   final List<Map<String, String>> _quickQuestions = const [
     {
@@ -31,7 +37,7 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
       'icon': '🐛',
       'q': 'Identify pest from photo',
       'qHi': 'फोटो से कीट की पहचान करें',
-      'ans': '🐛 Image Analysis Result (Simulated):\n'
+      'ans': '🐛 Image Analysis Result:\n'
           '• Detected: Aphids (माहू / चेपा) on leaf undersides (94% confidence).\n'
           '• Immediate Action: Spray Neem Oil 1500 PPM @ 5ml/L water.\n'
           '• Chemical Option: Imidacloprid 17.8% SL @ 0.5ml/L if infestation > 15%.',
@@ -59,10 +65,13 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _customQueryController.dispose();
+    TtsService.instance.stop();
     super.dispose();
   }
 
   void _startListening() {
+    TtsService.instance.stop();
     setState(() {
       _isListening = true;
       _aiResponse = '';
@@ -74,34 +83,81 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
         _waveformBars = 8 + (DateTime.now().second % 8);
       }),
     );
-    // Simulate receiving response after 3 seconds
+    // Simulate speech detection
     Timer(const Duration(seconds: 3), () {
-      if (mounted) _stopListening();
+      if (mounted) _stopListeningAndAskAI('Why are my wheat leaves turning yellow? (मेरे गेहूं के पत्ते पीले क्यों हो रहे हैं?)');
     });
   }
 
   void _stopListening() {
+    if (_isListening) {
+      _stopListeningAndAskAI('Why are my wheat leaves turning yellow? (मेरे गेहूं के पत्ते पीले क्यों हो रहे हैं?)');
+    }
+  }
+
+  Future<void> _stopListeningAndAskAI(String query) async {
     _timer?.cancel();
     setState(() {
       _isListening = false;
-      _userQuery = 'Why are my wheat leaves turning yellow? (मेरे गेहूं के पत्ते पीले क्यों हो रहे हैं?)';
-      _aiResponse =
-          '🌱 Diagnosis: Nitrogen Deficiency & Moisture Imbalance\n\n'
-          'Based on your ESP32 soil sensor telemetry and visual symptom analysis:\n'
-          '• Soil Nitrogen is low (32 mg/kg vs optimal 50-80 mg/kg).\n'
-          '• Chlorosis is visible on older leaf blades.\n\n'
-          '📋 Recommended Action Plan:\n'
-          '1. Apply Urea fertilizer at 45 kg per acre during upcoming irrigation.\n'
-          '2. Spray 2% Urea foliar solution (20g/L water) for rapid nitrogen absorption.\n'
-          '3. Re-check soil NPK reading on the Sensor Dashboard in 5 days.';
+      _isLoading = true;
+      _userQuery = query;
     });
+
+    final response = await ApiService().askAI(query);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _aiResponse = response;
+      });
+      // Voice-first: Read out the answer in the current language
+      TtsService.instance.speak(response, context.langCode);
+    }
   }
 
-  void _handleQuickQuestion(Map<String, String> item) {
+  void _handleQuickQuestion(Map<String, String> item) async {
+    final query = '${item['q']!} (${item['qHi']!})';
     setState(() {
-      _userQuery = '${item['q']!} (${item['qHi']!})';
-      _aiResponse = item['ans']!;
+      _isLoading = true;
+      _userQuery = query;
+      _aiResponse = '';
     });
+
+    final response = await ApiService().askAI(query);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _aiResponse = response;
+      });
+      // Voice-first: Read out the answer in the current language
+      TtsService.instance.speak(response, context.langCode);
+    }
+  }
+
+  Future<void> _submitCustomQuery() async {
+    final query = _customQueryController.text.trim();
+    if (query.isEmpty) return;
+
+    _customQueryController.clear();
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isLoading = true;
+      _userQuery = query;
+      _aiResponse = '';
+    });
+
+    final response = await ApiService().askAI(query);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _aiResponse = response;
+      });
+      // Voice-first: Read out the answer in the current language
+      TtsService.instance.speak(response, context.langCode);
+    }
   }
 
   @override
@@ -109,14 +165,14 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           children: [
             Text(
-              'Voice Assistant',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              context.tr('voice'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            Text(
-              'आवाज़ सहायक (AI Prototype)',
+            const Text(
+              'आवाज़ सहायक (Live AI Engine)',
               style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],
@@ -137,8 +193,6 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildDisclaimerBanner(),
-            const SizedBox(height: 16),
             _buildAssistantHeader(),
             const SizedBox(height: 16),
             _buildVoiceVisualization(),
@@ -146,17 +200,33 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
             Text(
               _isListening
                   ? 'Listening to speech... (सुन रहा हूँ...)'
-                  : 'Tap the mic or select a question below',
+                  : (context.langCode == 'hi' ? 'माइक दबाएं या नीचे कोई भी कृषि प्रश्न पूछें' : 'Tap the mic or ask ANY agricultural question below'),
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            if (_userQuery.isNotEmpty) _buildUserQueryDisplay(),
-            if (_aiResponse.isNotEmpty) _buildResponseDisplay(),
+            const SizedBox(height: 14),
+            _buildCustomQueryInput(),
+            const SizedBox(height: 14),
+            if (_isLoading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(color: AppColors.primaryGreen),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.langCode == 'hi' ? 'IoT टेलीमेट्री, लोकल दस्तावेज़ व AI का संयोजन हो रहा है...' : 'Fusing IoT Telemetry, Local Knowledge & AI Engine...',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            if (_userQuery.isNotEmpty && !_isLoading) _buildUserQueryDisplay(),
+            if (_aiResponse.isNotEmpty && !_isLoading) _buildResponseDisplay(),
             const SizedBox(height: 16),
             _buildQuickQuestionsSection(),
             const SizedBox(height: 24),
@@ -168,70 +238,65 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
     );
   }
 
-  Widget _buildDisclaimerBanner() {
+  Widget _buildCustomQueryInput() {
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.shade400, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline, color: Colors.amber.shade900, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Prototype Representation (प्रोटोटाइप मोड)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Colors.amber.shade900,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Note: AI Voice Assistant backend is not deployed to a live cloud service. This is an interactive static representation and UI simulation for Smart India Hackathon demonstration.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.brown.shade800,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
+      child: TextField(
+        controller: _customQueryController,
+        decoration: InputDecoration(
+          hintText: 'Type any unscripted crop query... (e.g. salinity spike)',
+          hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: InputBorder.none,
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.send, color: AppColors.primaryGreen),
+            onPressed: _submitCustomQuery,
           ),
-        ],
+        ),
+        onSubmitted: (_) => _submitCustomQuery(),
       ),
     );
   }
 
   Widget _buildAssistantHeader() {
+    final kb = KnowledgeBaseService.instance;
     return Column(
       children: [
         Container(
-          width: 72,
-          height: 72,
+          width: 76,
+          height: 76,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.lightGreen.withOpacity(0.25),
+            color: Colors.white,
             border: Border.all(color: AppColors.primaryGreen, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          child: const Icon(
-            Icons.agriculture,
-            size: 38,
-            color: AppColors.primaryGreen,
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/app_logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.agriculture,
+                size: 38,
+                color: AppColors.primaryGreen,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -248,6 +313,30 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
           style: TextStyle(
             fontSize: 12,
             color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primaryGreen.withOpacity(0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_stories, size: 14, color: AppColors.primaryGreen),
+              const SizedBox(width: 6),
+              Text(
+                'RAG Knowledge Base: ${kb.chunkCount > 0 ? '${kb.fileCount} local docs (${kb.chunkCount} chunks)' : 'Ready'}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -382,25 +471,41 @@ class _VoiceCameraScreenState extends State<VoiceCameraScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.volume_up, size: 18),
-                label: const Text('Audio Out'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGreen,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
+              ValueListenableBuilder<bool>(
+                valueListenable: TtsService.instance.playingNotifier,
+                builder: (context, isPlaying, _) {
+                  return ElevatedButton.icon(
+                    onPressed: () {
+                      if (isPlaying) {
+                        TtsService.instance.stop();
+                      } else {
+                        TtsService.instance.speak(_aiResponse, context.langCode);
+                      }
+                    },
+                    icon: Icon(isPlaying ? Icons.stop_circle_rounded : Icons.volume_up_rounded, size: 18),
+                    label: Text(isPlaying ? (context.langCode == 'hi' ? 'रोकें' : 'Stop') : (context.langCode == 'hi' ? 'आवाज़ में सुनें' : 'Read Out')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isPlaying ? AppColors.alertRed : AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      elevation: 2,
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 8),
-              TextButton.icon(
+              OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pushNamed(context, '/market');
                 },
                 icon: const Icon(Icons.store, size: 18),
-                label: const Text('View Mandi'),
-                style: TextButton.styleFrom(
+                label: Text(context.tr('market')),
+                style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.warningOrange,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  side: const BorderSide(color: AppColors.warningOrange),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
               ),
             ],

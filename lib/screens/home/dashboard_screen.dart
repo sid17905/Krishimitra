@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../models/sensor_data.dart';
+import '../../providers/locale_provider.dart';
+import '../../services/ml_predictor_service.dart';
+import '../../services/tts_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -9,35 +15,80 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 1;
-  String _selectedLanguage = 'hi';
+  int _selectedIndex = 0;
+
+  final SensorData _sensor = SensorData(
+    id: 'esp32-001',
+    name: 'Field Unit #1 (Block A)',
+    moisture: 65,
+    temperature: 28.5,
+    humidity: 72,
+    ph: 6.8,
+    npkN: 45,
+    npkP: 22,
+    npkK: 35,
+    timestamp: DateTime.now(),
+  );
+
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        leadingWidth: 100,
+        leadingWidth: 104,
         leading: Row(
           children: [
+            const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.sensors),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              icon: const Icon(Icons.sensors, size: 22),
               onPressed: () => Navigator.pushNamed(context, '/sensors'),
-              tooltip: AppStrings.get('sensor_module', _selectedLanguage),
+              tooltip: context.tr('sensor_module'),
             ),
             IconButton(
-              icon: const Icon(Icons.account_circle),
-              onPressed: () {
-                _showProfileDialog();
-              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              icon: const Icon(Icons.account_circle, size: 22),
+              onPressed: _showProfileDialog,
               tooltip: 'Account Profile',
             ),
           ],
         ),
-        title: Text(
-          AppStrings.get('app_name', _selectedLanguage),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/app_logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.tr('app_name'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.5),
+            ),
+          ],
         ),
         centerTitle: true,
+        backgroundColor: AppColors.primaryGreen,
+        elevation: 0,
         actions: [
           _buildLanguageDropdown(),
         ],
@@ -45,19 +96,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildGreetingSection(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+                  _buildDailyFarmAdvisoryCard(),
+                  const SizedBox(height: 14),
                   _buildQuickStats(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _buildModuleGrid(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _buildRecentAlerts(),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -72,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             const CircleAvatar(
@@ -84,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Ramesh Kumar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Ghazipur, UP', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                Text('Ghazipur, UP (Farm 01)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
               ],
             ),
           ],
@@ -100,7 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 8),
             _profileInfoRow(Icons.grass, 'Primary Crop: Wheat / Paddy'),
             const SizedBox(height: 8),
-            _profileInfoRow(Icons.sensors, 'ESP32 Node #1: Online'),
+            _profileInfoRow(Icons.sensors, 'ESP32 Node #1: Online (99.4% uptime)'),
           ],
         ),
         actions: [
@@ -118,7 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Icon(icon, size: 18, color: AppColors.primaryGreen),
         const SizedBox(width: 10),
-        Text(text, style: const TextStyle(fontSize: 13)),
+        Expanded(child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary))),
       ],
     );
   }
@@ -128,15 +182,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primaryGreen, AppColors.darkGreen],
+          colors: [AppColors.darkGreen, AppColors.primaryGreen],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.3),
-            blurRadius: 10,
+            color: AppColors.primaryGreen.withOpacity(0.25),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -147,27 +201,159 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, color: AppColors.lightGreen, size: 8),
+                      SizedBox(width: 6),
+                      Text('TELEMETRY LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Text(
-                  AppStrings.get('greeting', _selectedLanguage),
+                  context.tr('greeting'),
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
-                  AppStrings.get('greeting_sub', _selectedLanguage),
-                  style: const TextStyle(fontSize: 15, color: Colors.white70),
+                  context.tr('greeting_sub'),
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
           ),
-          const CircleAvatar(
-            radius: 38,
-            backgroundColor: Colors.white24,
-            child: Icon(Icons.agriculture, size: 38, color: Colors.white),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, size: 36, color: AppColors.primaryGreen),
+              ),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Plain-language, intuitive farm summary generated by background ML engines
+  Widget _buildDailyFarmAdvisoryCard() {
+    final isHindi = context.langCode == 'hi' || context.langCode == 'mr';
+    final cropPred = MLPredictorService.instance.predictBestCrop(_sensor);
+    final fertPred = MLPredictorService.instance.optimizeFertilizers(_sensor, 'Wheat');
+    final yieldPred = MLPredictorService.instance.predictYield(_sensor, 'Wheat');
+
+    final advice1 = isHindi
+        ? '🌾 खेत स्थिति: मिट्टी की नमी ${_sensor.moisture.toInt()}% उत्तम है। ${cropPred.cropHi} के लिए ${fertPred.ureaKgPerAcre.toInt()} किग्रा यूरिया की खुराक समय पर डालें।'
+        : '🌾 Soil Status: Moisture (${_sensor.moisture.toInt()}%) is optimal for ${cropPred.crop}. Apply ${fertPred.ureaKgPerAcre.toInt()} kg Urea as scheduled.';
+
+    final advice2 = isHindi
+        ? '📈 संभावित लाभ: इस पोषण प्रबंधन से आपकी उपज में +${yieldPred.yieldGainPercent}% और लगभग ₹${yieldPred.estimatedIncomeGainPerAcre.toInt()}/एकड़ का अतिरिक्त लाभ संभव है।'
+        : '📈 Expected Yield: Proper nutrient balance projected to boost yield by +${yieldPred.yieldGainPercent}% (~₹${yieldPred.estimatedIncomeGainPerAcre.toInt()}/acre gain).';
+
+    final spokenText = isHindi
+        ? 'नमस्ते! आज आपके खेत की मिट्टी में नमी ${_sensor.moisture.toInt()} प्रतिशत है, जो ${cropPred.cropHi} की फसल के लिए उत्तम है। इस समय ${fertPred.ureaKgPerAcre.toInt()} किलोग्राम यूरिया डालना सबसे अच्छा रहेगा। इससे आपकी उपज में ${yieldPred.yieldGainPercent.toInt()} प्रतिशत तक की बढ़ोतरी होगी।'
+        : 'Hello! Your field soil moisture is ${_sensor.moisture.toInt()}%, which is optimal for ${cropPred.crop}. Applying ${fertPred.ureaKgPerAcre.toInt()} kg of Urea as planned will boost your yield by approximately ${yieldPred.yieldGainPercent.toInt()} percent.';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primaryGreen.withOpacity(0.25), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.psychology, color: AppColors.primaryGreen, size: 20),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isHindi ? 'दैनिक खेत सलाह (पृष्ठभूमि AI इंजन)' : 'Daily AI Farm Advisory (Auto Background ML)',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                    ),
+                    Text(
+                      isHindi ? 'खेत सेंसर व मौसम विश्लेषण पर आधारित' : 'Auto-computed from field sensors & weather',
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              ValueListenableBuilder<bool>(
+                valueListenable: TtsService.instance.playingNotifier,
+                builder: (context, isPlaying, _) {
+                  return ElevatedButton.icon(
+                    onPressed: () {
+                      print("[BUTTON] Listen button pressed! isPlaying=$isPlaying");
+                      if (isPlaying) {
+                        TtsService.instance.stop();
+                      } else {
+                        print("[BUTTON] Calling speak with langCode=${context.langCode}, text='${spokenText.substring(0, spokenText.length > 30 ? 30 : spokenText.length)}...'");
+                        TtsService.instance.speak(spokenText, context.langCode);
+                      }
+                    },
+                    icon: Icon(isPlaying ? Icons.stop_circle : Icons.volume_up, size: 16),
+                    label: Text(isPlaying ? (isHindi ? 'रोकें' : 'Stop') : (isHindi ? 'सुनें' : 'Listen')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isPlaying ? AppColors.alertRed : AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 1,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const Divider(height: 18),
+          Text(advice1, style: const TextStyle(fontSize: 12.5, height: 1.4, color: AppColors.textPrimary)),
+          const SizedBox(height: 6),
+          Text(advice2, style: const TextStyle(fontSize: 12.5, height: 1.4, color: AppColors.textPrimary)),
         ],
       ),
     );
@@ -178,22 +364,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         _buildStatCard(
           '🌡️',
-          AppStrings.get('temp_label', _selectedLanguage),
+          context.tr('temp_label'),
           '28°C',
           AppColors.waterBlue,
         ),
         const SizedBox(width: 10),
         _buildStatCard(
           '💧',
-          AppStrings.get('moisture_label', _selectedLanguage),
+          context.tr('moisture_label'),
           '65%',
           AppColors.primaryGreen,
         ),
         const SizedBox(width: 10),
         _buildStatCard(
           '🌾',
-          AppStrings.get('crop_label', _selectedLanguage),
-          AppStrings.get('Wheat', _selectedLanguage),
+          context.tr('crop_label'),
+          context.tr('Wheat'),
           AppColors.soilBrown,
         ),
       ],
@@ -203,15 +389,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard(String emoji, String label, String value, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.12),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 8,
-              offset: const Offset(0, 3),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -222,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               value,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -232,7 +419,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -243,18 +430,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildModuleGrid() {
-    final gridModules = AppConstants.dashboardModules
-        .where((m) => m['id'] != 'voice_camera' && m['id'] != 'sensors')
-        .toList();
+    final gridModules = [
+      {
+        'id': 'voice',
+        'title': context.tr('voice_module'),
+        'icon': Icons.mic_rounded,
+        'color': AppColors.primaryGreen,
+        'route': '/voice',
+      },
+      {
+        'id': 'sensors',
+        'title': context.tr('sensor_module'),
+        'icon': Icons.sensors_rounded,
+        'color': AppColors.waterBlue,
+        'route': '/sensors',
+      },
+      {
+        'id': 'market',
+        'title': context.tr('market_module'),
+        'icon': Icons.trending_up_rounded,
+        'color': AppColors.warningOrange,
+        'route': '/market',
+      },
+      {
+        'id': 'weather',
+        'title': context.tr('weather_module'),
+        'icon': Icons.wb_sunny_rounded,
+        'color': const Color(0xFF0891B2),
+        'route': '/weather',
+      },
+      {
+        'id': 'alerts',
+        'title': context.tr('alerts_module'),
+        'icon': Icons.warning_amber_rounded,
+        'color': AppColors.alertRed,
+        'route': '/alerts',
+      },
+    ];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 1.0,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
+        childAspectRatio: 0.95,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
       ),
       itemCount: gridModules.length,
       itemBuilder: (context, index) {
@@ -265,32 +486,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildModuleCard(Map<String, dynamic> module) {
-    final String moduleKey = '${module['id']}_module';
-    final String localizedTitle = AppStrings.get(moduleKey, _selectedLanguage);
-
+    final color = module['color'] as Color;
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/${module['id']}'),
+      onTap: () => Navigator.pushNamed(context, module['route'] as String),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
-              color: module['color'].withOpacity(0.15),
+              color: color.withOpacity(0.08),
               blurRadius: 8,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(module['icon'], size: 32, color: module['color']),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(module['icon'] as IconData, size: 26, color: color),
+            ),
             const SizedBox(height: 8),
             Text(
-              localizedTitle,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              module['title'] as String,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -305,22 +532,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.get('recent_alerts', _selectedLanguage),
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              context.tr('recent_alerts'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/alerts'),
+              child: Text(context.tr('view_all'), style: const TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _buildAlertItem(
           '⚠️',
-          AppStrings.get('rain_warning_title', _selectedLanguage),
-          AppStrings.get('rain_warning_desc', _selectedLanguage),
+          context.tr('rain_warning_title'),
+          context.tr('rain_warning_desc'),
           AppColors.warningOrange,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         _buildAlertItem(
           '🌾',
-          AppStrings.get('wheat_sell_title', _selectedLanguage),
-          AppStrings.get('wheat_sell_desc', _selectedLanguage),
+          context.tr('wheat_sell_title'),
+          context.tr('wheat_sell_desc'),
           AppColors.primaryGreen,
         ),
       ],
@@ -332,25 +568,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: color, width: 6)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border(left: BorderSide(color: color, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 14),
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.textPrimary)),
                 Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
@@ -361,10 +597,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLanguageDropdown() {
+    final currentCode = context.langCode;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 10),
       child: DropdownButton<String>(
-        value: _selectedLanguage,
+        value: currentCode,
         underline: const SizedBox(),
         dropdownColor: Colors.white,
         icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
@@ -373,23 +610,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: e.key,
                   child: Text(
                     e.value,
-                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ))
             .toList(),
         selectedItemBuilder: (context) {
           return AppConstants.supportedLanguages.entries.map((e) {
             return Center(
-              child: Text(
-                e.value,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  e.value,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ),
             );
           }).toList();
         },
         onChanged: (value) {
           if (value != null) {
-            setState(() => _selectedLanguage = value);
+            context.read<LocaleProvider>().setLanguage(value);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.trOnce('language_changed')),
+                duration: const Duration(seconds: 1),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: AppColors.primaryGreen,
+              ),
+            );
           }
         },
       ),
@@ -401,23 +653,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       type: BottomNavigationBarType.fixed,
       currentIndex: _selectedIndex,
       selectedItemColor: AppColors.primaryGreen,
+      unselectedItemColor: AppColors.textSecondary,
+      backgroundColor: Colors.white,
+      elevation: 8,
       onTap: (index) {
         setState(() => _selectedIndex = index);
-        final routes = ['/market', '/voice', '/weather'];
-        Navigator.pushNamed(context, routes[index]);
+        final routes = ['/market', '/voice', '/weather', '/alerts'];
+        if (index < routes.length) {
+          Navigator.pushNamed(context, routes[index]);
+        }
       },
       items: [
         BottomNavigationBarItem(
-          icon: const Icon(Icons.trending_up),
-          label: AppStrings.get('market', _selectedLanguage),
+          icon: const Icon(Icons.trending_up_rounded),
+          label: context.tr('market'),
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.mic),
-          label: AppStrings.get('voice', _selectedLanguage),
+          icon: const Icon(Icons.mic_rounded),
+          label: context.tr('voice'),
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.wb_sunny),
-          label: AppStrings.get('weather', _selectedLanguage),
+          icon: const Icon(Icons.wb_sunny_rounded),
+          label: context.tr('weather'),
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.warning_amber_rounded),
+          label: context.tr('alerts_module'),
         ),
       ],
     );

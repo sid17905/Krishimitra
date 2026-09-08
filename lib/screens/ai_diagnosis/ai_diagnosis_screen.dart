@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
+import '../../core/localization_ext.dart';
+import '../../services/api_service.dart';
+import '../../services/tts_service.dart';
 
 class AIDiagnosisScreen extends StatefulWidget {
   const AIDiagnosisScreen({super.key});
@@ -9,6 +13,54 @@ class AIDiagnosisScreen extends StatefulWidget {
 }
 
 class _AIDiagnosisScreenState extends State<AIDiagnosisScreen> {
+  String _diagnosisText = '';
+  String _userQuestion = "'Why are my leaves yellowing?'";
+  bool _isLoading = false;
+  final TextEditingController _queryController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDiagnosis(_userQuestion);
+  }
+
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchDiagnosis(String question) async {
+    setState(() {
+      _isLoading = true;
+      _userQuestion = question;
+      _diagnosisText = '';
+    });
+
+    final response = await ApiService().askAI(
+      'A farmer asks: $question. '
+      'Provide a concise diagnosis and actionable remedy plan using the sensor data provided. '
+      'Include organic remedies if applicable. Answer in English and Hindi.',
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _diagnosisText = response;
+      });
+      TtsService.instance.speak(response, context.langCode);
+    }
+  }
+
+  void _submitCustomQuery() {
+    final query = _queryController.text.trim();
+    if (query.isEmpty) return;
+    _queryController.clear();
+    FocusScope.of(context).unfocus();
+    _fetchDiagnosis(query);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,32 +113,40 @@ class _AIDiagnosisScreenState extends State<AIDiagnosisScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            'YOUR QUESTION:',
+        children: [
+          const Text(
+            'ASK AI DIAGNOSIS (लाइव इंजन):',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            "'Why are my leaves yellowing?'",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+          const SizedBox(height: 12),
+          TextField(
+            controller: _queryController,
+            decoration: InputDecoration(
+              hintText: 'Describe the symptom...',
+              hintStyle: const TextStyle(fontSize: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.send, color: AppColors.primaryGreen),
+                onPressed: _submitCustomQuery,
+              ),
             ),
+            onSubmitted: (_) => _submitCustomQuery(),
           ),
-          SizedBox(height: 4),
-          Text(
-            'मेरे पत्ते पीले क्यों हो रहे हैं?',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+          const SizedBox(height: 12),
+          if (_userQuestion.isNotEmpty)
+            Text(
+              "Current Query: $_userQuestion",
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -98,7 +158,7 @@ class _AIDiagnosisScreenState extends State<AIDiagnosisScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border(
+        border: const Border(
           left: BorderSide(color: Colors.amber, width: 6),
         ),
         boxShadow: [
@@ -117,7 +177,7 @@ class _AIDiagnosisScreenState extends State<AIDiagnosisScreen> {
               Icon(Icons.warning_amber, color: Colors.amber, size: 24),
               SizedBox(width: 12),
               Text(
-                'AI DIAGNOSIS',
+                'AI LIVE DIAGNOSIS',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -134,24 +194,52 @@ class _AIDiagnosisScreenState extends State<AIDiagnosisScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'Nitrogen Deficiency',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          const SizedBox(height: 16),
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+              ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: TtsService.instance.playingNotifier,
+                    builder: (context, isPlaying, _) {
+                      return Text(
+                        _diagnosisText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                          height: 1.5,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: TtsService.instance.playingNotifier,
+                  builder: (context, isPlaying, _) {
+                    return IconButton(
+                      icon: Icon(
+                        isPlaying ? Icons.stop_circle : Icons.volume_up,
+                        color: isPlaying ? AppColors.alertRed : AppColors.primaryGreen,
+                      ),
+                      onPressed: () {
+                        if (isPlaying) {
+                          TtsService.instance.stop();
+                        } else {
+                          TtsService.instance.speak(_diagnosisText, context.langCode);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Your plants are showing signs of nitrogen deficiency, which typically causes yellowing of older leaves. This is common in soils that have been heavily cropped or in areas with poor organic matter.',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
         ],
       ),
     );

@@ -48,11 +48,19 @@ class MarketDataRepository {
   ];
 
   static const List<String> mandis = [
-    'Ghazipur Mandi',
-    'Azadpur Mandi',
-    'Pune APMC',
-    'Kanpur Mandi',
-    'Pune Market',
+    'Ghazipur Mandi (UP)',
+    'Azadpur Mandi (Delhi)',
+    'Kanpur Mandi (UP)',
+    'Varanasi Mandi (UP)',
+    'Patna APMC (Bihar)',
+    'Indore APMC (MP)',
+    'Pune APMC (Maharashtra)',
+    'Nashik Market (Maharashtra)',
+    'Khanna Mandi (Punjab)',
+    'Karnal Mandi (Haryana)',
+    'Jaipur APMC (Rajasthan)',
+    'Rajkot Mandi (Gujarat)',
+    'Kandi APMC (West Bengal)',
   ];
 
   static const Map<String, CropStaticMarketInfo> cropData = {
@@ -62,11 +70,19 @@ class MarketDataRepository {
       nameHi: 'गेहूं',
       unit: '₹/quintal',
       mandiPrices: {
-        'Ghazipur Mandi': MandiPriceDetail(price: 2340, change: '+2.5%', isUp: true),
-        'Azadpur Mandi': MandiPriceDetail(price: 2380, change: '+1.5%', isUp: true),
-        'Pune APMC': MandiPriceDetail(price: 2420, change: '+0.9%', isUp: true),
-        'Kanpur Mandi': MandiPriceDetail(price: 2290, change: '+0.8%', isUp: true),
-        'Pune Market': MandiPriceDetail(price: 2410, change: '+1.1%', isUp: true),
+        'Ghazipur Mandi (UP)': MandiPriceDetail(price: 2340, change: '+2.5%', isUp: true),
+        'Azadpur Mandi (Delhi)': MandiPriceDetail(price: 2380, change: '+1.5%', isUp: true),
+        'Kanpur Mandi (UP)': MandiPriceDetail(price: 2290, change: '+0.8%', isUp: true),
+        'Varanasi Mandi (UP)': MandiPriceDetail(price: 2320, change: '+1.4%', isUp: true),
+        'Patna APMC (Bihar)': MandiPriceDetail(price: 2280, change: '+1.1%', isUp: true),
+        'Indore APMC (MP)': MandiPriceDetail(price: 2450, change: '+2.2%', isUp: true),
+        'Pune APMC (Maharashtra)': MandiPriceDetail(price: 2420, change: '+0.9%', isUp: true),
+        'Nashik Market (Maharashtra)': MandiPriceDetail(price: 2410, change: '+1.1%', isUp: true),
+        'Khanna Mandi (Punjab)': MandiPriceDetail(price: 2375, change: '+1.8%', isUp: true),
+        'Karnal Mandi (Haryana)': MandiPriceDetail(price: 2360, change: '+1.2%', isUp: true),
+        'Jaipur APMC (Rajasthan)': MandiPriceDetail(price: 2390, change: '+1.7%', isUp: true),
+        'Rajkot Mandi (Gujarat)': MandiPriceDetail(price: 2440, change: '+2.0%', isUp: true),
+        'Kandi APMC (West Bengal)': MandiPriceDetail(price: 2750, change: '+2.8%', isUp: true),
       },
       trends: {
         '7D': [
