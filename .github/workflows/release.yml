@@ -22,6 +22,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create .env from template if missing
+        run: cp .env.example .env 2>/dev/null || touch .env
+
       - name: Install dependencies
         run: flutter pub get
 

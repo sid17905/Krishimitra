@@ -37,8 +37,6 @@ flutter:
   assets:
     - .env
     - assets/images/
-    - assets/icons/
-    - assets/fonts/
     - assets/data/
     # Local knowledge files the on-device RAG engine scans & grounds the AI on
     - assets/knowledge/
